@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/png" data-ifobe-imagen="icono">
+    <script src="inscripcion-config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inicio de Sesión - Gen 10</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+
+
+
+    <script>
+        let texts = {};
+
+        const API_URL =
+            window.IFOBE_INSCRIPCION.apiUrl;
+
+
+        /* =====================================================
+           LOGIN
+        ===================================================== */
+
+        let loginEnCurso = false;
+        async function validarLogin(event) {
+            event.preventDefault();
+            if (loginEnCurso) return;
+            const form = event.target;
+            if (!form.reportValidity()) return;
+            const button = form.querySelector('button[type="submit"]');
+            const status = document.getElementById('login-status');
+            const loading = document.getElementById('login-loading');
+            let entrando = false;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 30000);
+            loginEnCurso = true;
+            button.disabled = true;
+            form.setAttribute('aria-busy', 'true');
+            status.textContent = document.documentElement.lang === 'es' ? 'Verificando acceso…' : 'Signing in…';
+            document.getElementById('login-loading-text').textContent = status.textContent;
+            loading.hidden = false;
+            try {
+                const params = new URLSearchParams({accion: 'login', email: document.getElementById('email').value.trim(), password: document.getElementById('password').value});
+                const response = await fetch(API_URL, {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.fromEntries(params)),signal:controller.signal});
+                if (!response.ok) throw new Error('CONNECTION');
+                const result = await response.json();
+                if (result.ok !== true || typeof result.autorizado !== 'boolean') throw new Error('CONNECTION');
+                if (!result.autorizado) {
+                    status.textContent = texts.error_message;
+                    return;
+                }
+                if(result.token)sessionStorage.setItem('ifobeSesion',result.token);
+                status.textContent = texts.success_title;
+                entrando = true;
+                window.location.href = 'home.html';
+            } catch (error) {
+                status.textContent = document.documentElement.lang === 'es'
+                    ? 'No se pudo conectar con la plataforma. Revisa tu conexión e inténtalo nuevamente.'
+                    : 'Unable to connect. Check your connection and try again.';
+            } finally {
+                clearTimeout(timeout);
+                if (!entrando) loading.hidden = true;
+                loginEnCurso = false;
+                button.disabled = false;
+                form.removeAttribute('aria-busy');
+            }
+        }
+
+        function toggleTheme() {
+
+            document.body.classList.toggle("dark-mode");
+
+            const activo =
+                document.body.classList.contains("dark-mode");
+
+            document
+                .querySelector(".theme-toggle")
+                .setAttribute(
+                    "aria-pressed",
+                    String(activo)
+                );
+        }
+
+
+        /* =====================================================
+           CAMBIO DE IDIOMA
+        ===================================================== */
+
+        function toggleLanguage() {
+
+            const lang =
+                document.documentElement.lang === "es"
+                    ? "en"
+                    : "es";
+
+            document.documentElement.lang = lang;
+
+            updateTexts(lang);
+        }
+
+
+        /* =====================================================
+           TEXTOS
+        ===================================================== */
+
+        function updateTexts(lang) {
+
+            const translations = {
+
+                es: {
+
+                    welcome: "¡Bienvenido!",
+
+                    motivational:
+                        '"El aprendizaje nunca se detiene. ¡Sigue avanzando!"',
+
+                    email:
+                        "Correo Electrónico*",
+
+                    password:
+                        "Contraseña*",
+
+                    login:
+                        "Iniciar Sesión",
+
+                    success_title:
+                        "¡Bienvenido a Gen 10 - IFOBE!",
+
+                    success_message:
+                        "Recuerda que el aprendizaje es un viaje, no un destino.",
+
+                    error_title:
+                        "Credenciales incorrectas",
+
+                    error_message:
+                        "El correo o la contraseña no son correctos. Verifica tus datos."
+                },
+
+                en: {
+
+                    welcome:
+                        "Welcome!",
+
+                    motivational:
+                        '"Learning never stops. Keep moving forward!"',
+
+                    email:
+                        "Email Address*",
+
+                    password:
+                        "Password*",
+
+                    login:
+                        "Login",
+
+                    success_title:
+                        "Welcome back!",
+
+                    success_message:
+                        "Remember, learning is a journey, not a destination.",
+
+                    error_title:
+                        "Incorrect credentials",
+
+                    error_message:
+                        "Your email or password is incorrect. Please check your details."
+                }
+            };
+
+
+            texts = translations[lang];
+
+
+            /* Labels */
+
+            document.querySelector(
+                'label[for="email"]'
+            ).textContent = texts.email;
+
+            document.querySelector(
+                'label[for="password"]'
+            ).textContent = texts.password;
+
+
+            /* Botón */
+
+            document.querySelector(
+                'button[type="submit"]'
+            ).textContent = texts.login;
+
+
+            /* Placeholders */
+
+            document.getElementById("email").placeholder =
+                lang === "es"
+                    ? "nombre@correo.com"
+                    : "name@email.com";
+
+            document.getElementById("password").placeholder =
+                lang === "es"
+                    ? "Ingresa tu contraseña"
+                    : "Enter your password";
+
+
+            /* Botón idioma */
+
+            const languageButton =
+                document.querySelector(".language-toggle");
+
+            languageButton.querySelector('.language-code').textContent =
+                lang === "es"
+                    ? "ES"
+                    : "EN";
+
+            languageButton.setAttribute(
+                "aria-label",
+                lang === "es"
+                    ? "Switch to English"
+                    : "Cambiar a español"
+            );
+
+
+            /* Tema */
+
+            document
+                .querySelector(".theme-toggle")
+                .setAttribute(
+                    "aria-label",
+                    lang === "es"
+                        ? "Cambiar tema"
+                        : "Change theme"
+                );
+
+
+            /* Elementos data-es / data-en */
+
+            document
+                .querySelectorAll("[data-es]")
+                .forEach(element => {
+
+                    element.textContent =
+                        element.dataset[lang];
+
+                });
+
+
+            /* Bienvenida */
+
+            document.querySelector("h3").textContent =
+                texts.welcome;
+
+
+            /* Mensaje */
+
+            document.querySelector(
+                ".motivational-message"
+            ).textContent =
+                texts.motivational;
+            updatePasswordLabel();
+        }
+
+        function updatePasswordLabel() {
+            const visible = document.getElementById('password').type === 'text';
+            const button = document.querySelector('.password-toggle');
+            button.setAttribute('aria-pressed', String(visible));
+            button.setAttribute('aria-label', document.documentElement.lang === 'es'
+                ? (visible ? 'Ocultar contraseña' : 'Mostrar contraseña')
+                : (visible ? 'Hide password' : 'Show password'));
+        }
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+            updatePasswordLabel();
+        }
+
+
+        /* =====================================================
+           INICIO
+        ===================================================== */
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                updateTexts("es");
+
+            }
+        );
+    </script>
+
+    <!-- CSS adicional existente -->
+    <link rel="stylesheet" href="platform.css">
+
+    <link rel="stylesheet" href="refinamientos.css">
+    <link rel="stylesheet" href="login.css">
+<link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+</head>
+
+
+<body class="campus-login">
+    <div id="login-loading" class="login-loading" role="status" aria-live="polite" hidden>
+        <div class="login-loading-card">
+            <img data-ifobe-imagen="logo" alt="IFOBE" width="88" height="88">
+            <span class="login-loading-spinner" aria-hidden="true"></span>
+            <p id="login-loading-text">Verificando acceso…</p>
+        </div>
+    </div>
+
+    <!-- ================================
+         ENCABEZADO
+    ================================= -->
+
+    <header class="campus-header">
+
+        <div class="campus-brand">
+
+            <img
+                data-ifobe-imagen="logo"
+                alt="Logo Gen 10 IFOBE"
+            >
+
+            <div>
+
+                IFOBE
+
+                <small
+                    data-es="PLATAFORMA EDUCATIVA"
+                    data-en="EDUCATIONAL PLATFORM"
+                >
+                    PLATAFORMA EDUCATIVA
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <div class="top-controls">
+
+            <button
+                type="button"
+                class="theme-toggle"
+                onclick="toggleTheme()"
+                aria-label="Cambiar tema"
+                aria-pressed="false"
+                title="Cambiar tema"
+            >
+                ◐
+            </button>
+
+
+            <button
+                type="button"
+                class="language-toggle"
+                onclick="toggleLanguage()"
+                aria-label="Switch to English"
+                title="Cambiar idioma"
+            >
+                <i class="bi bi-globe2" aria-hidden="true"></i>
+                <span class="language-code">ES</span><span aria-hidden="true">⌄</span>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================================
+         CONTENIDO
+    ================================= -->
+
+    <main class="access-layout">
+
+
+        <!-- PRESENTACIÓN -->
+
+        <section
+            class="access-story"
+            aria-labelledby="story-title"
+        >
+
+            <div
+                class="access-eyebrow"
+                data-es="Educación que transforma"
+                data-en="Education that transforms"
+            >
+                Formación que transforma
+            </div>
+
+
+            <h1 id="story-title">
+
+                <span
+                    data-es="El siguiente paso"
+                    data-en="The next step"
+                >
+                    El siguiente paso
+                </span>
+
+                <br>
+
+                <em
+                    data-es="comienza contigo."
+                    data-en="starts with you."
+                >
+                    comienza contigo.
+                </em>
+
+            </h1>
+
+
+            <p
+                data-es="Bienvenido a tu espacio de gestión educativa. Conectamos la formación con nuevas oportunidades para crecer."
+                data-en="Welcome to your education management space. Connecting education with new opportunities to grow."
+            >
+                Bienvenido a tu espacio de gestión educativa.
+                Conectamos la formación con nuevas oportunidades
+                para crecer.
+            </p>
+
+
+            <ul class="story-benefits">
+                <li><i class="bi bi-mortarboard" aria-hidden="true"></i><span data-es="Formación de calidad" data-en="Quality education">Formación de calidad</span></li>
+                <li><i class="bi bi-person" aria-hidden="true"></i><span data-es="Gestión académica" data-en="Academic management">Gestión académica</span></li>
+                <li><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span data-es="Tu progreso en línea" data-en="Your progress online">Tu progreso en línea</span></li>
+                <li><i class="bi bi-shield-check" aria-hidden="true"></i><span data-es="Seguro y confiable" data-en="Safe and reliable">Seguro y confiable</span></li>
+            </ul>
+            <p class="story-signature" data-es="Juntos construimos un mejor futuro" data-en="Together we build a better future">Juntos construimos un mejor futuro</p>
+
+        </section>
+
+
+        <!-- LOGIN -->
+
+        <div class="login-container">
+
+
+            <img
+                data-ifobe-imagen="logo"
+                alt="Logo Gen 10 IFOBE"
+                class="logo"
+            >
+
+
+            <p class="login-brand-caption">IFOBE <span data-es="PLATAFORMA EDUCATIVA" data-en="EDUCATIONAL PLATFORM">PLATAFORMA EDUCATIVA</span></p>
+            <h3 class="mb-2"></h3>
+
+
+            <p class="motivational-message"></p>
+
+
+            <form onsubmit="validarLogin(event)">
+
+
+                <div class="mb-3 text-start">
+
+                    <label
+                        for="email"
+                        class="form-label"
+                    >
+                        Correo Electrónico*
+                    </label>
+
+                    <div class="input-wrap">
+                    <i class="bi bi-envelope" aria-hidden="true"></i>
+                    <input
+                        type="email"
+                        class="form-control"
+                        id="email"
+                        autocomplete="username"
+                        placeholder="Ingrese su correo"
+                        required
+                    >
+                    </div>
+
+                </div>
+
+
+                <div class="mb-3 text-start">
+
+                    <label
+                        for="password"
+                        class="form-label"
+                    >
+                        Contraseña*
+                    </label>
+
+                    <div class="input-wrap">
+                    <i class="bi bi-lock" aria-hidden="true"></i>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="password"
+                        autocomplete="current-password"
+                        placeholder="Ingrese su contraseña"
+                        required
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword()" aria-controls="password" aria-label="Mostrar contraseña" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-primary w-100"
+                >
+                    Iniciar Sesión
+                </button>
+
+            </form>
+            <p id="login-status" role="status" aria-live="polite"></p>
+            <p class="access-help"><a href="gen10.html" data-es="Campus Gen10 · Acceso para docentes y estudiantes →" data-en="Gen10 Campus · Teachers and students →">Campus Gen10 · Acceso para docentes y estudiantes →</a></p>
+
+
+            <p class="access-help">
+
+                <a
+                    href="inscripcion.html"
+                    data-es="¿Eres nuevo? Inscríbete aquí →"
+                    data-en="New here? Register here →"
+                >
+                    ¿Eres nuevo? Inscríbete aquí →
+                </a>
+
+            </p>
+
+
+            <p
+                class="access-help"
+                data-es="¿Necesitas ayuda para ingresar? Contacta a la administración de tu institución."
+                data-en="Need help signing in? Contact your institution administration."
+            >
+                ¿Necesitas ayuda para ingresar?
+                Contacta a la administración de tu institución.
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <!-- ================================
+         PIE DE PÁGINA
+    ================================= -->
+
+    <footer class="campus-footer">
+        IFOBE · Gen 10
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/png" data-ifobe-imagen="icono">
+    <script src="inscripcion-config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Certificados IFOBE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ifobe-navy: #0a2a4a;
+            --ifobe-navy-deep: #051a30;
+            --ifobe-gold: #d9a441;
+            --ifobe-sky: #2f7fd1;
+            --ifobe-paper: #f7f5f0;
+            --ifobe-ink: #1c2a38;
+            --ifobe-line: #dfe3e8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 16px;
+            font-family: 'Inter', sans-serif;
+            color: var(--ifobe-ink);
+            background:
+                radial-gradient(circle at 15% 20%, rgba(217,164,65,0.12), transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(47,127,209,0.18), transparent 45%),
+                linear-gradient(160deg, var(--ifobe-navy-deep), var(--ifobe-navy) 60%, #0d3457);
+            background-attachment: fixed;
+        }
+
+        .page-wrap {
+            width: 100%;
+            max-width: 1280px;
+        }
+
+        .card-shell {
+            display: flex;
+            min-height: calc(100vh - 32px);
+            background: var(--ifobe-paper);
+            border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+
+        .brand-panel {
+            flex: 0 0 310px;
+            background:
+                radial-gradient(circle at 30% 20%, rgba(217,164,65,0.25), transparent 55%),
+                linear-gradient(165deg, var(--ifobe-navy-deep), var(--ifobe-navy) 75%);
+            color: #eef3f9;
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-right: 4px solid var(--ifobe-gold);
+        }
+
+        .brand-panel img {
+            max-width: 108px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+        }
+
+        .brand-panel h2 {
+            font-family: 'Source Serif 4', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            line-height: 1.3;
+            letter-spacing: 0.01em;
+            margin-bottom: 14px;
+        }
+
+        .brand-panel .legal-note {
+            display: block;
+            font-size: 0.72rem;
+            line-height: 1.5;
+            color: #b7c6d9;
+        }
+
+        .container {
+            flex: 1 1 auto;
+            width: auto;
+            max-width: none;
+            padding: 22px 30px;
+            min-width: 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .form-block {
+            min-width: 0;
+        }
+
+        .action-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .action-grid .btn {
+            width: auto;
+            min-width: 190px;
+            flex: 0 0 auto;
+            margin-bottom: 0 !important;
+            min-height: 40px;
+            padding: 8px 18px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 720px) {
+            .card-shell { flex-direction: column; border-radius: 14px; }
+            .brand-panel {
+                flex: 0 0 auto;
+                border-right: none;
+                border-bottom: 4px solid var(--ifobe-gold);
+                padding: 24px 20px;
+            }
+            .brand-panel img { max-width: 90px; margin-bottom: 10px; }
+            .form-grid { grid-template-columns: 1fr; gap: 0; }
+            .action-grid { grid-template-columns: 1fr; }
+            .action-grid .btn { width: 100%; min-width: 0; }
+        }
+
+        .section-label {
+            font-family: 'Source Serif 4', serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ifobe-navy);
+            margin: 0 0 10px;
+            padding-bottom: 7px;
+            border-bottom: 1px solid var(--ifobe-line);
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.83rem;
+            color: var(--ifobe-navy);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--ifobe-line);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--ifobe-sky);
+            box-shadow: 0 0 0 3px rgba(47,127,209,0.18);
+        }
+
+        .form-control[readonly] {
+            background-color: #eef1f4;
+        }
+
+        .btn {
+            width: 100%;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 9px 12px;
+        }
+
+        .btn-primary {
+            background-color: var(--ifobe-navy);
+            border-color: var(--ifobe-navy);
+        }
+        .btn-primary:hover {
+            background-color: #123a63;
+            border-color: #123a63;
+        }
+
+        .btn-success {
+            background-color: #1f7a4d;
+            border-color: #1f7a4d;
+        }
+        .btn-success:hover {
+            background-color: #185f3c;
+            border-color: #185f3c;
+        }
+
+        .btn-danger {
+            background-color: transparent;
+            border: 1px solid #c0392b;
+            color: #c0392b;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+            color: #fff;
+        }
+
+        .btn-outline-primary {
+            background-color: transparent;
+            border: 1px solid var(--ifobe-navy);
+            color: var(--ifobe-navy);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--ifobe-navy);
+            border-color: var(--ifobe-navy);
+            color: #fff;
+        }
+
+        .field-row { margin-bottom: 11px; }
+
+        .divider {
+            height: 1px;
+            background: var(--ifobe-line);
+            margin: 14px 0;
+        }
+
+        .modal-header { background: var(--ifobe-navy); color: #fff; }
+        .modal-header .btn-close { filter: invert(1); }
+
+        /* --- Toasts de estado --- */
+        .toast-stack {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            left: 16px;
+            z-index: 1080;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .app-toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 12px 14px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+            border-left: 4px solid var(--ifobe-sky);
+            font-size: 0.87rem;
+            color: var(--ifobe-ink);
+            animation: toast-in 0.25s ease-out;
+            width: 100%;
+            max-width: 340px;
+            pointer-events: auto;
+        }
+        .app-toast.success { border-left-color: #1f7a4d; }
+        .app-toast.error { border-left-color: #c0392b; }
+        .app-toast.warning { border-left-color: var(--ifobe-gold); }
+
+        .app-toast .icon {
+            font-weight: 700;
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .app-toast.success .icon { color: #1f7a4d; }
+        .app-toast.error .icon { color: #c0392b; }
+        .app-toast.warning .icon { color: #b5811f; }
+        .app-toast.info .icon { color: var(--ifobe-sky); }
+
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(24px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* --- Modales: adaptables a cualquier pantalla --- */
+        .modal-dialog {
+            max-width: 460px;
+            width: calc(100% - 24px);
+            margin: 1.75rem auto;
+        }
+        .modal-content { border-radius: 12px; }
+        .modal-header { padding: 14px 18px; }
+        .modal-title { font-size: 1.02rem; line-height: 1.35; }
+        .modal-body { font-size: 0.92rem; padding: 18px; }
+        .resumen-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--ifobe-line);
+            font-size: 0.87rem;
+        }
+        .resumen-item span:first-child {
+            color: #6b7a89;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        .resumen-item span:last-child {
+            font-weight: 600;
+            color: var(--ifobe-navy);
+            text-align: right;
+            word-break: break-word;
+        }
+        .modal-footer {
+            padding: 14px 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .modal-footer .btn {
+            flex: 1 1 140px;
+            width: auto;
+            margin: 0;
+        }
+        @media (max-width: 420px) {
+            .modal-dialog { width: calc(100% - 16px); margin: 12px auto; }
+            .modal-footer .btn { flex: 1 1 100%; }
+        }
+
+        .history-panel {
+            margin-top: 22px;
+            border-top: 1px solid var(--ifobe-line);
+            padding-top: 18px;
+        }
+
+        .history-toolbar {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .history-toolbar .btn {
+            width: auto;
+            white-space: nowrap;
+        }
+
+        .history-count {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--ifobe-navy);
+            background: #e9eef4;
+            border-radius: 999px;
+            padding: 6px 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .history-table-wrap {
+            overflow: auto;
+            border: 1px solid var(--ifobe-line);
+            border-radius: 8px;
+            background: #fff;
+            max-height: 260px;
+        }
+
+        .history-table {
+            margin: 0;
+            min-width: 760px;
+            font-size: 0.82rem;
+        }
+
+        .history-table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            color: #fff;
+            background: var(--ifobe-navy);
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .history-empty {
+            padding: 18px;
+            color: #687584;
+            text-align: center;
+            font-size: 0.86rem;
+        }
+
+        @media (max-width: 720px) {
+            .history-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .history-toolbar .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="refinamientos.css">
+    <link rel="stylesheet" href="certificacion.css">
+    <link rel="stylesheet" href="portal-shell.css">
+<link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+<script src="portal-shell.js" defer></script>
+</head>
+<body class="certificates-home portal-page" data-portal-page="certificados">
+
+<div class="toast-stack" id="toastStack" role="status" aria-live="polite"></div>
+
+<div class="page-wrap">
+
+  <div class="card-shell">
+    
+
+    <main class="container certificate-content" id="certificacion">
+        <header class="workspace-heading"><h1>Centro de certificación</h1><span>Consulta al estudiante y genera sus certificados académicos de forma rápida y segura.</span></header>
+        <section class="certificate-form" aria-labelledby="solicitud-titulo">
+        <h2 id="solicitud-titulo">Emisión de certificado</h2>
+        <div class="form-grid">
+        <div class="form-block">
+        <p class="section-label">1. Validación del estudiante</p>
+        <div class="field-row">
+            <label for="cedula" class="form-label">Cédula del estudiante</label>
+            <input type="text" id="cedula" class="form-control" maxlength="10" placeholder="Ej: 32288072">
+        </div>
+        <div class="field-row">
+            <label for="nombre" class="form-label">Nombre del estudiante</label>
+            <input type="text" id="nombre" class="form-control" readonly placeholder="Se completa al validar">
+        </div>
+        <button class="btn btn-primary" onclick="validarCedula()">Validar cédula</button>
+
+        </div>
+        <div class="form-block">
+
+        <p class="section-label">2. Datos del curso</p>
+        <div class="field-row">
+            <label for="programa" class="form-label">Programa</label>
+            <select id="programa" class="form-select"><option value="">Cargando programas…</option></select><p id="programasEstado" role="status"></p><button type="button" onclick="cargarProgramas()">Actualizar programas</button>
+        </div>
+
+        <div class="field-row">
+            <label for="horas" class="form-label">Horas del curso</label>
+            <select id="horas" class="form-select">
+                <option value="">Seleccione las horas</option>
+                <option value="20">20 horas</option>
+                <option value="40">40 horas</option>
+                <option value="60">60 horas</option>
+                <option value="80">80 horas</option>
+                <option value="100">100 horas</option>
+                <option value="150">150 horas</option>
+                <option value="180">180 horas</option>
+                <option value="190">190 horas</option>
+                <option value="200">200 horas</option>
+                <option value="400">400 horas</option>
+            </select>
+        </div>
+
+        <div class="field-row">
+            <label for="semestre" class="form-label">Semestre</label>
+            <select id="semestre" class="form-select">
+                <option value="">Seleccione el semestre</option>
+                <option value="1">Semestre 1</option>
+                <option value="2">Semestre 2</option>
+                <option value="3">Semestre 3</option>
+                <option value="4">Semestre 4</option>
+            </select>
+        </div>
+
+        </div>
+        </div>
+
+        <input type="hidden" id="codigo" class="form-control">
+
+        <div class="divider"></div>
+
+        <div class="action-grid">
+        <button class="btn btn-success mb-2" onclick="generarDiploma()">Generar diploma (PDF)</button>
+        <button class="btn btn-outline-primary mb-2" onclick="generarCertificadoCapacitacion()">Generar certificado de capacitación (PDF)</button>
+        <button class="btn btn-outline-primary" type="button" onclick="limpiarCertificacion()">Limpiar formulario</button>
+        </div>
+        </section>
+        <section class="history-panel" id="historial" aria-labelledby="historial-titulo">
+            <h2 id="historial-titulo">Mis documentos recientes</h2>
+            <div class="history-toolbar">
+                <input type="search" id="historialBuscar" class="form-control" placeholder="Buscar por cedula, nombre, programa o codigo">
+                <span class="history-count" id="historialContador">0 registros</span>
+                <button class="btn btn-outline-primary" type="button" onclick="exportarHistorialExcel()">Exportar Excel</button>
+                <button class="btn btn-danger" type="button" onclick="cargarHistorialRemoto()">Actualizar historial</button>
+            </div>
+            <div class="history-table-wrap">
+                <table class="table table-sm table-hover history-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Cedula</th>
+                            <th>Estudiante</th>
+                            <th>Programa</th>
+                            <th>Horas</th>
+                            <th>Semestre</th>
+                            <th>Codigo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialTabla"></tbody>
+                </table>
+                <div class="history-empty" id="historialVacio">Aun no hay documentos generados.</div>
+            </div>
+        </section>
+    </main>
+    <aside class="certificate-info">
+      <section class="info-card">
+        <i class="bi bi-file-earmark-check certificate-icon" aria-hidden="true"></i>
+        <h2>Certificados con<br>identidad IFOBE</h2>
+        <p>Genera los documentos académicos con los datos del estudiante y un código de identificación para su consulta.</p>
+        <ul><li>Generación en formato PDF</li><li>Historial de documentos emitidos</li><li>Consulta por estudiante y programa</li><li>Copia al correo registrado</li></ul>
+      </section>
+      <section class="info-card help-card" id="ayuda">
+        <h2>¿Necesitas ayuda?</h2>
+        <p>Valida la cédula, selecciona el programa, las horas y el semestre. Luego elige el documento que deseas generar.</p>
+        <details><summary>Ayuda con la certificación</summary><p>Si el estudiante no aparece, revisa su registro en <a href="registro-alumnos (2).html">Estudiantes</a>. Si falta un programa, pulsa «Actualizar programas». Para corregir datos académicos, contacta a la administración de tu institución.</p></details>
+      </section>
+      <p class="certificate-signature">Juntos construimos<br>un mejor futuro</p>
+      <p class="privacy-note">Los datos personales se utilizan para la gestión académica y la emisión de certificados.</p>
+    </aside>
+  </div>
+</div>
+
+<!-- Modal de Confirmación previa a generar el PDF -->
+<div class="modal fade" id="confirmGenerarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cfModalTitulo">Confirmar generación del diploma</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="cfModalIntro">Estás a punto de generar el diploma con estos datos. Verifica que sean correctos antes de continuar:</p>
+                <div class="resumen-item"><span>Estudiante</span><span id="cfNombre"></span></div>
+                <div class="resumen-item"><span>Cédula</span><span id="cfCedula"></span></div>
+                <div class="resumen-item"><span>Programa</span><span id="cfPrograma"></span></div>
+                <div class="resumen-item"><span>Horas</span><span id="cfHoras"></span></div>
+                <div class="resumen-item"><span>Semestre</span><span id="cfSemestre"></span></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="width:auto;">Revisar datos</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarGeneracion" style="width:auto;">Sí, generar documento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmacionModalLabel">✓ Documento generado con éxito</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confModalIntro">El PDF se descargó correctamente en tu carpeta de <strong>Descargas</strong>. Resumen del documento emitido:</p>
+                <div class="resumen-item"><span>Estudiante</span><span id="confNombre"></span></div>
+                <div class="resumen-item"><span>Cédula</span><span id="confCedula"></span></div>
+                <div class="resumen-item"><span>Programa</span><span id="confPrograma"></span></div>
+                <div class="resumen-item"><span>Horas</span><span id="confHoras"></span></div>
+                <div class="resumen-item"><span>Semestre</span><span id="confSemestre"></span></div>
+                <div class="resumen-item"><span>Código</span><span id="confCodigo"></span></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function limpiarCertificacion() {
+        ['cedula', 'nombre', 'programa', 'horas', 'semestre', 'codigo'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('cedula').focus();
+    }
+
+    function cerrarSesion() {
+        sessionStorage.removeItem('ifobeSesion');
+        window.location.href = 'index.html';
+    }
+
+    const HISTORIAL_KEY = "ifobe_historial_documentos_cache";
+    const ALUMNOS_KEY = "ifobe_alumnos_cache";
+    const HISTORIAL_API_URL = window.IFOBE_INSCRIPCION.apiUrl;
+    let historialEnMemoria = [];
+    let alumnosEnMemoria = {};
+
+    function obtenerHistorial() {
+        try {
+            return JSON.parse(localStorage.getItem(HISTORIAL_KEY)) || [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function guardarHistorialCache(historial) {
+        try { localStorage.setItem(HISTORIAL_KEY, JSON.stringify(historial)); } catch (error) { /* El guardado remoto sigue disponible. */ }
+    }
+
+    function obtenerAlumnosCache() {
+        try {
+            return JSON.parse(localStorage.getItem(ALUMNOS_KEY)) || {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function guardarAlumnosCache(alumnos) {
+        try { localStorage.setItem(ALUMNOS_KEY, JSON.stringify(alumnos)); } catch (error) { /* Se conserva la copia en memoria. */ }
+    }
+
+    async function cargarAlumnosRemotos() {
+        try {
+            const respuesta = await fetch(`${HISTORIAL_API_URL}?accion=alumnos`, {
+                method: "GET",
+                cache: "no-store"
+            });
+
+            if (!respuesta.ok) throw new Error("Respuesta no valida de alumnos");
+
+            const resultado = await respuesta.json();
+            if (resultado.ok !== true || !resultado.alumnos || typeof resultado.alumnos !== "object" || Array.isArray(resultado.alumnos)) throw new Error("Respuesta de alumnos inválida");
+            alumnosEnMemoria = resultado.alumnos;
+            guardarAlumnosCache(alumnosEnMemoria);
+        } catch (error) {
+            alumnosEnMemoria = obtenerAlumnosCache();
+            showToast(Object.keys(alumnosEnMemoria).length ? "No se pudo cargar la base de alumnos online. Se usará la última copia guardada." : "No se pudo cargar la base de alumnos. Revisa la conexión e inténtalo nuevamente.", "warning", 6500);
+        }
+    }
+
+    async function cargarHistorialRemoto() {
+        try {
+            const respuesta = await fetch(`${HISTORIAL_API_URL}?accion=listar`, {
+                method: "GET",
+                cache: "no-store"
+            });
+
+            if (!respuesta.ok) throw new Error("Respuesta no valida del historial");
+
+            const resultado = await respuesta.json();
+            if (!Array.isArray(resultado) && (resultado.ok !== true || !Array.isArray(resultado.historial))) throw new Error("Respuesta de historial inválida");
+            historialEnMemoria = Array.isArray(resultado) ? resultado : resultado.historial;
+            guardarHistorialCache(historialEnMemoria);
+            renderizarHistorial();
+        } catch (error) {
+            historialEnMemoria = obtenerHistorial();
+            renderizarHistorial();
+            showToast("No se pudo cargar el historial online. Se muestra la ultima copia guardada en esta PC.", "warning", 6500);
+        }
+    }
+
+    async function registrarHistorial(datos, codigo, tipoDocumento) {
+        const registro = {
+            fecha: new Date().toLocaleString("es-CO"),
+            tipo: tipoDocumento,
+            cedula: datos.cedula,
+            nombre: datos.nombre,
+            programa: datos.programa,
+            horas: datos.horas,
+            semestre: datos.semestre,
+            codigo
+        };
+
+        historialEnMemoria.unshift(registro);
+        guardarHistorialCache(historialEnMemoria);
+        renderizarHistorial();
+
+        try {
+            const respuesta = await fetch(HISTORIAL_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(registro)
+            });
+
+            if (!respuesta.ok) throw new Error("No se pudo guardar en la hoja");
+
+            const resultado = await respuesta.json();
+            if (resultado.ok !== true) throw new Error("No se confirmó el guardado");
+            showToast("Documento guardado en el historial online.", "success");
+            cargarHistorialRemoto();
+        } catch (error) {
+            showToast("El PDF se genero, pero no se pudo guardar en la hoja online. Revisa internet o el despliegue del script.", "error", 7500);
+        }
+    }
+
+    function escapeHtml(valor) {
+        return String(valor ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function renderizarHistorial() {
+        const tabla = document.getElementById("historialTabla");
+        const vacio = document.getElementById("historialVacio");
+        const contador = document.getElementById("historialContador");
+        const buscar = document.getElementById("historialBuscar");
+
+        if (!tabla || !vacio || !contador) return;
+
+        const filtro = (buscar?.value || "").trim().toLowerCase();
+        const historial = historialEnMemoria;
+        const registros = historial.filter((item) => {
+            const texto = [
+                item.fecha,
+                item.tipo,
+                item.cedula,
+                item.nombre,
+                item.programa,
+                item.horas,
+                item.semestre,
+                item.codigo
+            ].join(" ").toLowerCase();
+            return texto.includes(filtro);
+        });
+
+        tabla.innerHTML = registros.map((item) => `
+            <tr>
+                <td>${escapeHtml(item.fecha)}</td>
+                <td>${escapeHtml(item.tipo)}</td>
+                <td>${escapeHtml(item.cedula)}</td>
+                <td>${escapeHtml(item.nombre)}</td>
+                <td>${escapeHtml(item.programa)}</td>
+                <td>${escapeHtml(item.horas)}</td>
+                <td>${escapeHtml(item.semestre)}</td>
+                <td>${escapeHtml(item.codigo)}</td>
+            </tr>
+        `).join("");
+
+        vacio.style.display = registros.length ? "none" : "block";
+        contador.textContent = `${registros.length} ${registros.length === 1 ? "registro" : "registros"}`;
+    }
+
+    function exportarHistorialExcel() {
+        const historial = historialEnMemoria;
+        if (!historial.length) {
+            showToast("No hay registros para exportar.", "warning");
+            return;
+        }
+
+        const encabezados = ["Fecha", "Tipo", "Cedula", "Estudiante", "Programa", "Horas", "Semestre", "Codigo"];
+        const filas = historial.map((item) => [
+            item.fecha,
+            item.tipo,
+            item.cedula,
+            item.nombre,
+            item.programa,
+            item.horas,
+            item.semestre,
+            item.codigo
+        ]);
+        const csv = [encabezados, ...filas]
+            .map((fila) => fila.map((celda) => `"${String(celda ?? "").replace(/"/g, '""')}"`).join(";"))
+            .join("\r\n");
+        const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `historial_certificados_ifobe_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        showToast("Historial exportado para Excel.", "success");
+    }
+
+    function limpiarHistorial() {
+        const historial = historialEnMemoria;
+        if (!historial.length) {
+            showToast("El historial ya esta vacio.", "info");
+            return;
+        }
+        if (!confirm("Deseas borrar todo el historial guardado en este navegador?")) return;
+        showToast("Para borrar el historial online debes eliminar las filas desde la hoja de calculo.", "info", 6500);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        historialEnMemoria = obtenerHistorial();
+        alumnosEnMemoria = obtenerAlumnosCache();
+        renderizarHistorial();
+        cargarHistorialRemoto();
+        cargarAlumnosRemotos();
+        document.getElementById("historialBuscar")?.addEventListener("input", renderizarHistorial);
+    });
+
+    // Muestra un mensaje de estado no intrusivo (reemplaza los alert() nativos).
+    // tipo: 'success' | 'error' | 'warning' | 'info'
+    function showToast(mensaje, tipo = "info", duracion = 4200) {
+        const iconos = { success: "✓", error: "✕", warning: "!", info: "i" };
+        const stack = document.getElementById("toastStack");
+
+        const toast = document.createElement("div");
+        toast.className = `app-toast ${tipo}`;
+        toast.innerHTML = `<span class="icon">${iconos[tipo] || iconos.info}</span><span>${escapeHtml(mensaje)}</span>`;
+        stack.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(24px)";
+            setTimeout(() => toast.remove(), 300);
+        }, duracion);
+    }
+
+    // Modal de confirmación con Promesa, para reemplazar window.confirm().
+    // opciones: { titulo, intro, textoBoton }
+    function confirmarGeneracion(datos, opciones = {}) {
+        return new Promise((resolve) => {
+            document.getElementById("cfModalTitulo").textContent = opciones.titulo || "Confirmar generación del documento";
+            document.getElementById("cfModalIntro").textContent = opciones.intro || "Estás a punto de generar el documento con estos datos. Verifica que sean correctos antes de continuar:";
+            document.getElementById("btnConfirmarGeneracion").textContent = opciones.textoBoton || "Sí, generar documento";
+
+            document.getElementById("cfNombre").textContent = datos.nombre;
+            document.getElementById("cfCedula").textContent = datos.cedula;
+            document.getElementById("cfPrograma").textContent = datos.programa;
+            document.getElementById("cfHoras").textContent = `${datos.horas} horas`;
+            document.getElementById("cfSemestre").textContent = `Semestre ${datos.semestre}`;
+
+            const modalEl = document.getElementById("confirmGenerarModal");
+            const modal = new bootstrap.Modal(modalEl);
+            const btnConfirmar = document.getElementById("btnConfirmarGeneracion");
+
+            let resuelto = false;
+            const onConfirmar = () => {
+                resuelto = true;
+                modal.hide();
+                resolve(true);
+            };
+            const onOculto = () => {
+                btnConfirmar.removeEventListener("click", onConfirmar);
+                modalEl.removeEventListener("hidden.bs.modal", onOculto);
+                if (!resuelto) resolve(false);
+            };
+
+            btnConfirmar.addEventListener("click", onConfirmar);
+            modalEl.addEventListener("hidden.bs.modal", onOculto);
+            modal.show();
+        });
+    }
+
+    // Muestra el modal final de éxito con datos personalizados según el
+    // tipo de documento generado.
+    function mostrarModalExito(datos, codigo, opciones = {}) {
+        document.getElementById("confirmacionModalLabel").textContent = opciones.tituloExito || "✓ Documento generado con éxito";
+        document.getElementById("confModalIntro").innerHTML = opciones.introExito || 'El PDF se descargó correctamente en tu carpeta de <strong>Descargas</strong>. Resumen del documento emitido:';
+        document.getElementById("confNombre").textContent = datos.nombre;
+        document.getElementById("confCedula").textContent = datos.cedula;
+        document.getElementById("confPrograma").textContent = datos.programa;
+        document.getElementById("confHoras").textContent = datos.horas;
+        document.getElementById("confSemestre").textContent = datos.semestre;
+        document.getElementById("confCodigo").textContent = codigo;
+        const confirmacionModal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
+        confirmacionModal.show();
+    }
+
+    async function validarCedula() {
+        let cedula = document.getElementById("cedula").value.trim();
+        if (!Object.keys(alumnosEnMemoria).length) {
+            await cargarAlumnosRemotos();
+        }
+        const datosUsuarios = alumnosEnMemoria;
+
+        if (!cedula) {
+            showToast("Ingresa un número de cédula antes de validar.", "warning");
+            return false;
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(datosUsuarios, cedula) || !datosUsuarios[cedula]) {
+            document.getElementById("nombre").value = "";
+            showToast("No encontramos esa cédula en la base de datos. Verifica el número e inténtalo de nuevo.", "error");
+            return false;
+        }
+
+        document.getElementById("nombre").value = datosUsuarios[cedula];
+        showToast(`Cédula validada: ${datosUsuarios[cedula]}.`, "success");
+        return true;
+    }
+
+    // Escribe una línea centrada y, si no cabe en maxWidth, reduce el tamaño
+    // de fuente automáticamente hasta que entre. Evita que nombres largos
+    // o textos largos se salgan de los márgenes del certificado.
+    function textoAjustado(doc, texto, x, y, opciones) {
+        let tamanoMax = opciones.tamanoMax || 22;
+        let tamanoMin = opciones.tamanoMin || 12;
+        let maxWidth = opciones.maxWidth || 250;
+        let tamano = tamanoMax;
+
+        doc.setFontSize(tamano);
+        while (doc.getTextWidth(texto) > maxWidth && tamano > tamanoMin) {
+            tamano -= 1;
+            doc.setFontSize(tamano);
+        }
+        doc.text(texto, x, y, { align: "center" });
+        return tamano;
+    }
+
+    async function generarDiploma() {
+        if(!await prepararEmision())return;
+        let cedula = document.getElementById("cedula").value;
+        let nombre = document.getElementById("nombre").value;
+        let programa = document.getElementById("programa").value;
+        let horas = document.getElementById("horas").value;
+        let semestre = document.getElementById("semestre").value;
+
+        if (!nombre) {
+            showToast("Primero valida la cédula del estudiante.", "warning");
+            return;
+        }
+        if (!programa) {
+            showToast("Selecciona el programa del curso.", "warning");
+            return;
+        }
+        if (!horas) {
+            showToast("Selecciona la intensidad horaria del curso.", "warning");
+            return;
+        }
+        if (!semestre) {
+            showToast("Selecciona el semestre correspondiente.", "warning");
+            return;
+        }
+
+        let codigo = `IFOBE-${crypto.randomUUID()}`;
+        document.getElementById("codigo").value = codigo;
+
+        const confirmado = await confirmarGeneracion(
+            { nombre, cedula, programa, horas, semestre },
+            {
+                titulo: "Confirmar generación del diploma",
+                intro: "Estás a punto de generar el diploma con estos datos. Verifica que sean correctos antes de continuar:",
+                textoBoton: "Sí, generar diploma"
+            }
+        );
+        if (!confirmado) {
+            showToast("Generación cancelada. No se creó ningún diploma.", "info");
+            return;
+        }
+
+        let fecha = new Date();
+        let dia = fecha.getDate();
+        let mes = fecha.toLocaleString('es-ES', { month: 'long' });
+        let anio = fecha.getFullYear();
+
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+
+        // Página A4 apaisada: 297 x 210 mm. Se trabaja siempre dentro de un
+        // margen de 15 mm arriba/abajo para que nada quede cortado ni se
+        // salga del área imprimible.
+        const centroX = 148.5;
+        const margenInferior = 195;
+
+        let img = new Image();
+        img.src = window.IFOBE_CONFIG.imagenes.certificado;
+
+        img.onload = function () {
+          const dibujar = (sinFirma) => {
+            // Rasterizar la copia elimina la firma de sus píxeles; no queda oculta en el PDF.
+            let fondoDiploma = img;
+            if(sinFirma){
+                const canvas=document.createElement('canvas');
+                canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+                const ctx=canvas.getContext('2d');
+                ctx.drawImage(img,0,0);ctx.fillStyle='#fff';
+                ctx.fillRect(canvas.width*46/297,canvas.height*174/210,canvas.width*38/297,canvas.height*16/210);
+                fondoDiploma=canvas.toDataURL('image/png');
+            }
+            doc.addImage(fondoDiploma, "PNG", 0, 0, 297, 210, undefined, "FAST");
+
+            // --- Encabezado institucional ---
+            doc.setFont("times", "bold");
+            doc.setFontSize(19);
+            doc.setTextColor(20, 30, 45);
+            doc.text("INSTITUTO DE FORMACIÓN IFOBE", centroX, 26, { align: "center" });
+
+            doc.setFont("times", "normal");
+            doc.setFontSize(10.5);
+            doc.text("NIT. 901753803-7 | CÓDIGO 8065 APOYO A LA EDUCACIÓN", centroX, 33, { align: "center" });
+            doc.text("Régimen de ley 115 de 1994 | Resolución 7/23/2024", centroX, 39, { align: "center" });
+            doc.text("Número de resolución nacional: R2024031453", centroX, 45, { align: "center" });
+
+            // --- Cuerpo principal ---
+            doc.setFont("times", "bold");
+            doc.setFontSize(14);
+            doc.text("OTORGADO A CONSTANCIA DE ASISTENCIA A:", centroX, 60, { align: "center" });
+
+            doc.setFont("times", "bold");
+            textoAjustado(doc, nombre, centroX, 74, { tamanoMax: 22, tamanoMin: 14, maxWidth: 220 });
+
+            doc.setFont("times", "normal");
+            doc.setFontSize(13);
+            doc.text(`Cédula: ${cedula}`, centroX, 84, { align: "center" });
+
+            doc.setFontSize(12);
+            textoAjustado(doc, `Por haber culminado el curso especializado en: ${programa}`, centroX, 94, { tamanoMax: 12, tamanoMin: 9, maxWidth: 230 });
+
+            doc.setFontSize(12);
+            doc.text(`Horas: ${horas}      Semestre: ${semestre}`, centroX, 103, { align: "center" });
+            doc.text(`Código: ${codigo}`, centroX, 111, { align: "center" });
+
+            // --- Párrafo descriptivo (envuelto para no invadir el sello) ---
+            doc.setFontSize(9.5);
+            let texto = "El presente certificado acredita la participación y aprobación del estudiante en el curso, validando las competencias adquiridas en la materia. Este documento tiene validez oficial y respalda los conocimientos y habilidades desarrolladas, sirviendo como reconocimiento de su formación en el área correspondiente.";
+            let lineas = doc.splitTextToSize(texto, 210);
+            doc.text(lineas, centroX, 122, { align: "center", lineHeightFactor: 1.35 });
+
+            // --- Fecha de expedición ---
+            doc.setFontSize(10.5);
+            let textoFecha = `Otorgado en Ciudad Caucasia, a los ${dia} días del mes de ${mes} del año ${anio} con una intensidad horaria de ${horas} horas.`;
+            let lineasFecha = doc.splitTextToSize(textoFecha, 220);
+            doc.text(lineasFecha, centroX, 152, { align: "center" });
+
+            // --- Firmas (dentro del margen inferior de 195 mm) ---
+            doc.setFont("times", "italic");
+            doc.setFontSize(11);
+
+            doc.text("_________________________", 85, margenInferior - 15, { align: "center" });
+            doc.text("Armando Álvarez", 85, margenInferior - 8, { align: "center" });
+            doc.text("Director de Administración", 85, margenInferior - 2, { align: "center" });
+
+            doc.text("_________________________", 212, margenInferior - 15, { align: "center" });
+            doc.text("Jhonnie Tuirán", 212, margenInferior - 8, { align: "center" });
+            doc.text("Coordinador Académico", 212, margenInferior - 2, { align: "center" });
+
+          };
+          dibujar(false);
+            doc.save(`Certificado_Constancia_ifobe_${nombre}.pdf`);
+            doc = new jsPDF({ orientation:"landscape",unit:"mm",format:"a4",compress:true });
+            dibujar(true);
+            enviarCopiaPDF(doc,{nombre,cedula,programa,horas,semestre,codigo});
+
+            registrarHistorial(
+                { nombre, cedula, programa, horas, semestre },
+                codigo,
+                "Diploma"
+            );
+
+            mostrarModalExito(
+                { nombre, cedula, programa, horas, semestre },
+                codigo,
+                {
+                    tituloExito: "✓ Diploma generado con éxito",
+                    introExito: 'El PDF se descargó correctamente en tu carpeta de <strong>Descargas</strong>. Resumen del diploma emitido:'
+                }
+            );
+        };
+
+        img.onerror = function () {
+            showToast("No se pudo cargar la plantilla del certificado. Revisa imagenes.certificado en inscripcion-config.js.", "error", 6000);
+        };
+    }
+
+    // --- Segundo documento: Certificado de Aprobación de Capacitación ---
+    // Usa la misma base de datos y los mismos campos del formulario, pero
+    // con un formato completamente distinto: vertical (carta), sin imagen
+    // de fondo, con un diseño de tabla estructurada en lugar de un texto
+    // narrativo tipo diploma. Es un formato propio, dibujado con líneas y
+    // recuadros, pensado para procesos de Educación para el Trabajo y el
+    // Desarrollo Humano (ETDH).
+    async function generarCertificadoCapacitacion() {
+        if(!await prepararEmision())return;
+        let cedula = document.getElementById("cedula").value;
+        let nombre = document.getElementById("nombre").value;
+        let programa = document.getElementById("programa").value;
+        let horas = document.getElementById("horas").value;
+        let semestre = document.getElementById("semestre").value;
+
+        if (!nombre) {
+            showToast("Primero valida la cédula del estudiante.", "warning");
+            return;
+        }
+        if (!programa) {
+            showToast("Selecciona el programa del curso.", "warning");
+            return;
+        }
+        if (!horas) {
+            showToast("Selecciona la intensidad horaria del curso.", "warning");
+            return;
+        }
+        if (!semestre) {
+            showToast("Selecciona el semestre correspondiente.", "warning");
+            return;
+        }
+
+        let codigo = `IFOBE-${crypto.randomUUID()}`;
+
+        const confirmado = await confirmarGeneracion(
+            { nombre, cedula, programa, horas, semestre },
+            {
+                titulo: "Confirmar certificado de capacitación",
+                intro: "Estás a punto de generar el certificado de aprobación de capacitación para el trabajo con estos datos:",
+                textoBoton: "Sí, generar certificado"
+            }
+        );
+        if (!confirmado) {
+            showToast("Generación cancelada. No se creó ningún certificado.", "info");
+            return;
+        }
+
+        let fecha = new Date();
+        let dia = fecha.getDate();
+        let mes = fecha.toLocaleString('es-ES', { month: 'long' });
+        let anio = fecha.getFullYear();
+
+        const { jsPDF } = window.jspdf;
+        // Tamaño CARTA (US Letter): 215.9 x 279.4 mm — el mismo formato que
+        // usa el SENA en sus certificados de aprobación.
+        const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter", compress: true });
+
+        const pageW = 215.9, pageH = 279.4;
+        const centroX = pageW / 2;
+        const inkNavy = [10, 42, 74];
+        const inkGold = [217, 164, 65];
+        const inkGray = [90, 100, 112];
+
+        // Si existe una imagen de fondo estilo SENA (img/certificado_capacitacion.png,
+        // tamaño carta / 215.9 x 279.4 mm o proporción equivalente), se usa como
+        // plantilla y solo se dibujan los datos encima. Si el archivo no existe
+        // todavía, el certificado se genera igual con un diseño propio dibujado
+        // (bordes navy/dorado + tabla), sin depender de ninguna imagen.
+        const fondo = new Image();
+        fondo.src = window.IFOBE_CONFIG.imagenes.certificadoCapacitacion;
+
+        const dibujarContenido = (conBordesPropios) => {
+            if (conBordesPropios) {
+                doc.setDrawColor(...inkNavy);
+                doc.setLineWidth(1.1);
+                doc.rect(10, 10, pageW - 20, pageH - 20);
+                doc.setDrawColor(...inkGold);
+                doc.setLineWidth(0.4);
+                doc.rect(14, 14, pageW - 28, pageH - 28);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(15);
+                doc.setTextColor(...inkNavy);
+                doc.text("INSTITUTO DE FORMACIÓN IFOBE", centroX, 28, { align: "center" });
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(...inkGray);
+                doc.text("NIT. 901753803-7 · Código 8065 apoyo a la educación", centroX, 34, { align: "center" });
+                doc.text("Educación para el Trabajo y el Desarrollo Humano · Resolución 7/23/2024", centroX, 39, { align: "center" });
+
+                doc.setDrawColor(...inkGold);
+                doc.setLineWidth(0.6);
+                doc.line(45, 45, pageW - 45, 45);
+            }
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(20);
+            doc.setTextColor(...inkNavy);
+            doc.text("CERTIFICADO DE APROBACIÓN", centroX, 62, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11);
+            doc.setTextColor(...inkGray);
+            doc.text("Capacitación para el Trabajo y el Desarrollo Humano", centroX, 70, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11);
+            doc.setTextColor(...inkNavy);
+            doc.text("Se certifica que:", centroX, 86, { align: "center" });
+
+            // Nombre del estudiante (con auto-ajuste si es muy largo)
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...inkNavy);
+            textoAjustado(doc, nombre, centroX, 98, { tamanoMax: 19, tamanoMin: 13, maxWidth: pageW - 55 });
+
+            // Tabla de datos estructurada (formato distinto al diploma narrativo)
+            const filas = [
+                ["Documento de identidad", `${cedula}`],
+                ["Programa de formación", programa],
+                ["Intensidad horaria", `${horas} horas`],
+                ["Semestre académico", `Semestre ${semestre}`],
+                ["Código de verificación", codigo]
+            ];
+
+            let tablaY = 112;
+            const filaAlto = 10;
+            const colEtiquetaW = 68, colValorW = 96;
+            const anchoTabla = colEtiquetaW + colValorW;
+            const colEtiquetaX = centroX - anchoTabla / 2;
+            const colValorX = colEtiquetaX + colEtiquetaW;
+
+            doc.setFontSize(9.5);
+            filas.forEach((fila, i) => {
+                const y = tablaY + i * filaAlto;
+                if (i % 2 === 0) {
+                    doc.setFillColor(244, 246, 249);
+                    doc.rect(colEtiquetaX, y, anchoTabla, filaAlto, "F");
+                }
+                doc.setDrawColor(220, 224, 229);
+                doc.setLineWidth(0.2);
+                doc.rect(colEtiquetaX, y, colEtiquetaW, filaAlto);
+                doc.rect(colValorX, y, colValorW, filaAlto);
+
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(...inkGray);
+                doc.text(fila[0], colEtiquetaX + 4, y + filaAlto / 2 + 1.5);
+
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(...inkNavy);
+                let valorTexto = doc.splitTextToSize(fila[1], colValorW - 8);
+                doc.text(valorTexto, colValorX + 4, y + filaAlto / 2 + 1.5);
+            });
+
+            const finTabla = tablaY + filas.length * filaAlto;
+
+            // Párrafo de certificación
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(...inkGray);
+            let texto = `El Instituto de Formación IFOBE certifica que el (la) participante mencionado(a) aprobó satisfactoriamente el proceso de capacitación para el trabajo y el desarrollo humano correspondiente al programa indicado, cumpliendo con los objetivos de aprendizaje y la intensidad horaria establecida.`;
+            let lineas = doc.splitTextToSize(texto, pageW - 56);
+            doc.text(lineas, centroX, finTabla + 13, { align: "center", lineHeightFactor: 1.4 });
+
+            // Fecha de expedición
+            doc.setFontSize(9.5);
+            doc.text(`Expedido en Ciudad, a los ${dia} días del mes de ${mes} del año ${anio}.`, centroX, finTabla + 38, { align: "center" });
+
+            // Firmas
+            doc.setDrawColor(...inkNavy);
+            doc.setLineWidth(0.3);
+            const yFirma = pageH - 40;
+            doc.line(centroX - 75, yFirma, centroX - 22, yFirma);
+            doc.line(centroX + 22, yFirma, centroX + 75, yFirma);
+
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(10);
+            doc.setTextColor(...inkNavy);
+            doc.text("Armando Álvarez", centroX - 48.5, yFirma + 6, { align: "center" });
+            doc.text("Director de Administración", centroX - 48.5, yFirma + 11, { align: "center" });
+
+            doc.text("Jhonnie Tuirán", centroX + 48.5, yFirma + 6, { align: "center" });
+            doc.text("Coordinador Académico", centroX + 48.5, yFirma + 11, { align: "center" });
+        };
+
+        const finalizar = () => {
+            doc.save(`Certificado_Capacitacion_ifobe_${nombre}.pdf`);
+            enviarCopiaPDF(doc,{nombre,cedula,programa,horas,semestre,codigo});
+            registrarHistorial(
+                { nombre, cedula, programa, horas, semestre },
+                codigo,
+                "Certificado de capacitacion"
+            );
+            mostrarModalExito(
+                { nombre, cedula, programa, horas, semestre },
+                codigo,
+                {
+                    tituloExito: "✓ Certificado de capacitación generado",
+                    introExito: 'El PDF se descargó correctamente en tu carpeta de <strong>Descargas</strong>. Resumen del certificado emitido:'
+                }
+            );
+        };
+
+        fondo.onload = function () {
+            doc.addImage(fondo, "PNG", 0, 0, pageW, pageH);
+            dibujarContenido(false); // la imagen ya trae su propio borde/diseño
+            finalizar();
+        };
+
+        fondo.onerror = function () {
+            dibujarContenido(true); // sin imagen: se dibuja el diseño propio completo
+            finalizar();
+        };
+    }
+</script>
+
+<script src="programas.js"></script>
+<script src="emision.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
