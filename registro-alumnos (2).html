@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/png" data-ifobe-imagen="icono">
+    <script src="inscripcion-config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Alumnos · IFOBE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --azul-sello:#1a2b5c;
+    --azul-oscuro:#0f1938;
+    --azul-medio:#26397a;
+    --azul-linea:#33468c;
+    --dorado:#a9822f;
+    --dorado-claro:#d7b869;
+    --papel:#f4f2eb;
+    --papel-alt:#e8e6da;
+    --tinta:#1b2030;
+    --tinta-suave:#5c6170;
+    --linea:#dad6c6;
+    --rojo-sello:#7a3030;
+    --rojo-sello-suave:#9a4a4a;
+    --blanco:#fffefb;
+    --sombra: 0 14px 34px -14px rgba(15,25,56,.32);
+    --sombra-suave: 0 4px 14px -6px rgba(15,25,56,.18);
+    --radio: 10px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 420px at 8% -8%, rgba(26,43,92,.10), transparent 60%),
+      radial-gradient(700px 380px at 100% 8%, rgba(169,130,47,.07), transparent 55%),
+      linear-gradient(180deg, var(--papel) 0%, var(--papel) 60%, var(--papel-alt) 100%);
+    background-attachment:fixed;
+    color:var(--tinta);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* textura de papel muy sutil */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.5;
+    background-image:
+      radial-gradient(rgba(15,25,56,.035) .6px, transparent .6px);
+    background-size:3px 3px;
+    z-index:0;
+  }
+
+  .envoltura{ position:relative; z-index:1; }
+
+  .envoltura{
+    max-width:980px;
+    margin:0 auto;
+    padding:44px 24px 80px;
+  }
+
+  /* ===== Encabezado institucional ===== */
+  header.marca{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:26px;
+    margin-bottom:34px;
+    padding-bottom:28px;
+  }
+
+  .escudo{
+    flex:0 0 auto;
+    width:88px;
+    height:88px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.9), rgba(255,255,255,.55) 45%, rgba(255,255,255,0) 70%),
+      var(--blanco);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.8) inset,
+      0 18px 32px -14px rgba(15,25,56,.35),
+      0 0 0 1px rgba(26,43,92,.08);
+    padding:8px;
+  }
+  .escudo img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+
+  .titulo-bloque h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(22px, 3vw, 30px);
+    margin:0 0 5px;
+    color:var(--azul-oscuro);
+    letter-spacing:.2px;
+  }
+  .titulo-bloque p{
+    margin:0;
+    color:var(--tinta-suave);
+    font-size:14px;
+    letter-spacing:.3px;
+  }
+  .titulo-bloque .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    color:var(--dorado);
+    margin-bottom:7px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .titulo-bloque .eyebrow::before{
+    content:"";
+    width:22px;
+    height:1px;
+    background:var(--dorado);
+    display:inline-block;
+  }
+
+  /* cinta institucional, evocando la del logo */
+  .cinta{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--linea) 15%, var(--linea) 85%, transparent);
+  }
+  .cinta::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    bottom:-1px;
+    transform:translateX(-50%);
+    width:120px;
+    height:3px;
+    border-radius:3px;
+    background:linear-gradient(90deg, var(--dorado), var(--dorado-claro), var(--dorado));
+  }
+
+  /* ===== Barra de control ===== */
+  .barra{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+
+  .buscador{
+    position:relative;
+    flex:1 1 280px;
+    max-width:420px;
+  }
+  .buscador input{
+    width:100%;
+    padding:11px 14px 11px 38px;
+    border-radius:var(--radio);
+    border:1px solid var(--linea);
+    background:var(--blanco);
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    color:var(--tinta);
+    outline:none;
+    box-shadow:var(--sombra-suave);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .buscador input:focus{
+    border-color:var(--azul-linea);
+    box-shadow:0 0 0 3px rgba(26,43,92,.12);
+  }
+  .buscador svg{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    opacity:.5;
+  }
+
+  .contador{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--tinta-suave);
+    white-space:nowrap;
+  }
+  .contador b{ color:var(--azul-oscuro); font-weight:600; }
+
+  .btn{
+    border:none;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    border-radius:var(--radio);
+    padding:11px 20px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:transform .12s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:active{ transform:translateY(1px); box-shadow:var(--sombra-suave) !important; }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .btn-primario{
+    background:linear-gradient(160deg, var(--azul-medio), var(--azul-sello) 55%, var(--azul-oscuro));
+    color:var(--blanco);
+    box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, var(--sombra);
+  }
+  .btn-primario:hover{ background:linear-gradient(160deg, var(--azul-linea), var(--azul-oscuro)); box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 18px 34px -14px rgba(15,25,56,.42); }
+  .btn-fantasma{
+    background:var(--blanco);
+    color:var(--azul-oscuro);
+    border:1px solid var(--linea);
+    box-shadow:var(--sombra-suave);
+  }
+  .btn-fantasma:hover{ border-color:var(--azul-linea); background:rgba(26,43,92,.05); }
+
+  /* ===== Ledger / tabla registro ===== */
+  .ledger{
+    background:var(--blanco);
+    border:1px solid var(--linea);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:var(--sombra);
+  }
+
+  .ledger-cabecera{
+    background:linear-gradient(165deg, var(--azul-medio) 0%, var(--azul-sello) 45%, var(--azul-oscuro) 100%);
+    color:var(--blanco);
+    display:grid;
+    grid-template-columns:56px 180px 1fr 96px;
+    padding:15px 20px;
+    font-size:12px;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    font-weight:600;
+    box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 6px 14px -8px rgba(15,25,56,.5);
+    position:relative;
+  }
+  .ledger-cabecera::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:3px;
+    background:linear-gradient(90deg, transparent, var(--dorado-claro), transparent);
+    opacity:.7;
+  }
+  .ledger-cabecera span:first-child{ opacity:.65; font-family:'JetBrains Mono', monospace; }
+
+  .fila{
+    display:grid;
+    grid-template-columns:56px 180px 1fr 96px;
+    align-items:center;
+    padding:14px 20px;
+    border-top:1px solid var(--linea);
+    font-size:14.5px;
+    transition:background .12s ease;
+  }
+  .fila:hover{ background:rgba(26,43,92,.035); }
+  .fila:nth-child(even){ background:rgba(26,43,92,.018); }
+  .fila:nth-child(even):hover{ background:rgba(26,43,92,.045); }
+
+  .num{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--dorado);
+    font-size:13px;
+    font-weight:600;
+  }
+  .cedula{
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    color:var(--azul-oscuro);
+    letter-spacing:.4px;
+  }
+  .nombre{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    color:var(--tinta);
+  }
+
+  .acciones{ display:flex; gap:6px; justify-content:flex-end; }
+  .icono-btn{
+    width:32px; height:32px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:8px;
+    border:1px solid transparent;
+    background:transparent;
+    cursor:pointer;
+    color:var(--tinta-suave);
+    transition:all .12s ease;
+  }
+  .icono-btn:hover{ background:var(--papel-alt); color:var(--azul-oscuro); border-color:var(--linea); }
+  .icono-btn.peligro:hover{ background:rgba(122,48,48,.08); color:var(--rojo-sello); border-color:rgba(122,48,48,.25); }
+
+  .vacio, .cargando{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--tinta-suave);
+  }
+  .vacio .icono, .cargando .icono{
+    font-family:'Fraunces', serif;
+    font-size:34px;
+    color:var(--dorado);
+    margin-bottom:10px;
+  }
+  .vacio p, .cargando p{ margin:4px 0 0; font-size:14px; }
+
+  .esqueleto{
+    height:14px;
+    border-radius:4px;
+    background:linear-gradient(90deg, var(--papel-alt) 25%, var(--linea) 50%, var(--papel-alt) 75%);
+    background-size:200% 100%;
+    animation:brillo 1.3s ease-in-out infinite;
+  }
+  @keyframes brillo{ 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+  /* ===== Modal ===== */
+  .fondo-modal{
+    position:fixed; inset:0;
+    background:rgba(18,25,20,.45);
+    backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+    opacity:0; pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .fondo-modal.activo{ opacity:1; pointer-events:auto; }
+
+  .modal{
+    background:var(--blanco);
+    width:100%; max-width:420px;
+    border-radius:14px;
+    border-top:4px solid var(--dorado);
+    box-shadow:0 25px 60px -15px rgba(16,28,63,.4);
+    padding:28px 26px 24px;
+    transform:translateY(10px) scale(.98);
+    transition:transform .18s ease;
+  }
+  .fondo-modal.activo .modal{ transform:translateY(0) scale(1); }
+
+  .modal h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:20px;
+    margin:0 0 4px;
+    color:var(--azul-oscuro);
+  }
+  .modal .subt{ margin:0 0 20px; font-size:13px; color:var(--tinta-suave); }
+
+  .campo{ margin-bottom:16px; }
+  .campo label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    color:var(--tinta-suave);
+    margin-bottom:6px;
+  }
+  .campo input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid var(--linea);
+    font-size:14.5px;
+    font-family:'Inter', sans-serif;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo input:disabled{ background:var(--papel-alt); opacity:.7; }
+  .campo input:focus{ border-color:var(--azul-linea); box-shadow:0 0 0 3px rgba(26,43,92,.12); }
+  .campo .error{ color:var(--rojo-sello); font-size:12.5px; margin-top:5px; display:none; }
+  .campo.con-error input{ border-color:var(--rojo-sello); }
+  .campo.con-error .error{ display:block; }
+
+  .modal-acciones{ display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+
+  .confirmar{ text-align:center; }
+  .confirmar .icono{ font-size:34px; color:var(--rojo-sello); margin-bottom:8px; }
+  .confirmar p{ font-size:14.5px; color:var(--tinta); margin:0 0 4px; }
+  .confirmar .nombre-confirmar{ font-family:'Fraunces', serif; font-weight:600; }
+
+  .btn-peligro{
+    background:var(--rojo-sello);
+    color:var(--blanco);
+  }
+  .btn-peligro:hover{ background:var(--rojo-sello-suave); }
+
+  /* ===== Toast ===== */
+  .toasts{
+    position:fixed;
+    bottom:22px; right:22px;
+    display:flex; flex-direction:column; gap:10px;
+    z-index:80;
+  }
+  .toast{
+    background:var(--azul-oscuro);
+    color:var(--blanco);
+    padding:13px 18px;
+    border-radius:9px;
+    font-size:13.5px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 12px 30px -8px rgba(0,0,0,.35);
+    animation:entrar .2s ease;
+    border-left:3px solid var(--dorado-claro);
+    max-width:320px;
+  }
+  .toast.error{ border-left-color:var(--rojo-sello-suave); }
+  @keyframes entrar{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+
+  @media (max-width:640px){
+    .ledger-cabecera, .fila{
+      grid-template-columns:34px 1fr 74px;
+    }
+    .ledger-cabecera span:nth-child(3), .fila .nombre{
+      display:none;
+    }
+    .fila{ cursor:pointer; }
+    .fila.expandido .nombre{ display:block; grid-column:1/-1; padding-top:4px; }
+  }
+
+  :focus-visible{ outline:2px solid var(--dorado); outline-offset:2px; }
+</style>
+<link rel="stylesheet" href="platform.css">
+    <link rel="stylesheet" href="refinamientos.css">
+    <link rel="stylesheet" href="portal-shell.css">
+    <script src="portal-shell.js" defer></script>
+<link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="estudiantes.css">
+</head>
+<body class="campus-registry portal-page" data-portal-page="estudiantes">
+
+<div class="envoltura">
+  <nav class="registry-nav" aria-label="Navegación principal"><strong>IFOBE <span style="font-weight:400;letter-spacing:0">/ Gestión educativa</span></strong><a href="matriculas.html">Matrículas</a><a href="home.html">Volver al inicio</a></nav>
+
+  <header class="marca">
+    <div class="escudo">
+      <img data-ifobe-imagen="logo" alt="Logo Instituto IFOBE">
+    </div>
+    <div class="titulo-bloque">
+      <span class="eyebrow">Instituto de Formación · IFOBE</span>
+      <h1>Centro de estudiantes</h1>
+      <p>Consulta, agrega, edita o elimina alumnos habilitados para certificación.</p>
+    </div>
+    <div class="cinta"></div>
+  </header>
+
+  <section class="student-summary" aria-label="Resumen del registro">
+    <article><span class="summary-icon"><i class="bi bi-people" aria-hidden="true"></i></span><div><p>Estudiantes registrados</p><strong id="studentTotal">—</strong><small>Base de estudiantes para certificar</small></div></article>
+    <article><span class="summary-icon"><i class="bi bi-search" aria-hidden="true"></i></span><div><p>Resultados de la consulta</p><strong id="studentMatches">—</strong><small id="studentFilter">Todos los estudiantes</small></div></article>
+    <a href="home.html"><span class="summary-icon"><i class="bi bi-patch-check" aria-hidden="true"></i></span><div><p>Certificaciones</p><strong class="summary-action">Emitir un documento <i class="bi bi-arrow-right" aria-hidden="true"></i></strong><small>Ir al centro de certificación</small></div></a>
+  </section>
+  <section class="student-directory" aria-labelledby="directoryTitle">
+  <div class="directory-heading"><div><p>GESTIÓN ACADÉMICA</p><h2 id="directoryTitle">Directorio de estudiantes</h2><span>Busca por nombre o documento y gestiona su información.</span></div><button type="button" class="btn btn-fantasma" onclick="cargarAlumnos()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Actualizar</button></div>
+  <div class="barra">
+    <div class="buscador">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input type="text" id="buscarInput" aria-label="Buscar alumnos por cédula o nombre" placeholder="Buscar por cédula o nombre…">
+    </div>
+    <div style="display:flex; align-items:center; gap:18px;">
+      <span class="contador" id="contador">Cargando…</span>
+      <button class="btn btn-primario" id="btnAgregar">
+        <i class="bi bi-person-plus" aria-hidden="true"></i>
+        Agregar alumno
+      </button>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <div class="ledger-cabecera">
+      <span>#</span>
+      <span>Cédula</span>
+      <span>Nombre</span>
+      <span></span>
+    </div>
+    <div id="cuerpoTabla"></div>
+  </div>
+  </section>
+  <aside class="student-guidance"><i class="bi bi-lightbulb" aria-hidden="true"></i><div><strong>Un registro completo facilita cada certificado</strong><p>Revisa el documento, el nombre, el correo y el programa desde el botón de edición. Puedes gestionar la vinculación académica en <a href="matriculas.html">Matrículas</a>.</p></div></aside>
+
+</div>
+
+<!-- Modal agregar/editar -->
+<div class="fondo-modal" id="fondoFormulario">
+  <div class="modal">
+    <h2 id="tituloFormulario">Agregar alumno</h2>
+    <p class="subt" id="subtituloFormulario">Se guardará en la hoja "Alumnos".</p>
+
+    <div class="campo" id="campoCedula">
+      <label for="inputCedula">Cédula</label>
+      <input type="text" id="inputCedula" inputmode="numeric" placeholder="Ej: 0000000000" autocomplete="off">
+      <div class="error">La cédula es obligatoria.</div>
+    </div>
+
+    <div class="campo" id="campoNombre">
+      <label for="inputNombre">Nombre completo</label>
+      <input type="text" id="inputNombre" placeholder="Ej: Nombre Apellido" autocomplete="off">
+      <div class="error">El nombre es obligatorio.</div>
+    </div>
+
+    <div class="campo"><label for="inputCorreo">Correo del estudiante</label><input type="email" id="inputCorreo" required placeholder="estudiante@correo.com"></div>
+    <div class="campo"><label for="programa">Programa académico</label><select id="programa" required disabled><option value="">Cargando programas…</option></select><p id="programasEstado" role="status"></p><button type="button" onclick="cargarProgramas()">Actualizar programas</button></div>
+    <div class="modal-acciones">
+      <button class="btn btn-fantasma" id="btnCancelarFormulario">Cancelar</button>
+      <button class="btn btn-primario" id="btnGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminación -->
+<div class="fondo-modal" id="fondoConfirmar">
+  <div class="modal confirmar">
+    <div class="icono"><i class="bi bi-info-circle" aria-hidden="true"></i></div>
+    <h2>Eliminar alumno</h2>
+    <p>¿Seguro que deseas eliminar a</p>
+    <p class="nombre-confirmar" id="nombreAEliminar"></p>
+    <div class="modal-acciones" style="justify-content:center;">
+      <button class="btn btn-fantasma" id="btnCancelarEliminar">Cancelar</button>
+      <button class="btn btn-peligro" id="btnConfirmarEliminar">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+  // ============================================================
+  // Configuración — pega aquí la URL de tu Web App desplegada
+  // ============================================================
+  const API_URL = window.IFOBE_INSCRIPCION.apiUrl;
+
+  const cuerpoTabla   = document.getElementById('cuerpoTabla');
+  const contador      = document.getElementById('contador');
+  const buscarInput   = document.getElementById('buscarInput');
+  const toasts        = document.getElementById('toasts');
+
+  const fondoFormulario   = document.getElementById('fondoFormulario');
+  const tituloFormulario  = document.getElementById('tituloFormulario');
+  const subtituloFormulario = document.getElementById('subtituloFormulario');
+  const inputCedula   = document.getElementById('inputCedula');
+  const inputNombre   = document.getElementById('inputNombre');
+  const campoCedula   = document.getElementById('campoCedula');
+  const campoNombre   = document.getElementById('campoNombre');
+  const btnGuardar    = document.getElementById('btnGuardar');
+
+  const fondoConfirmar = document.getElementById('fondoConfirmar');
+  const nombreAEliminar = document.getElementById('nombreAEliminar');
+  const btnConfirmarEliminar = document.getElementById('btnConfirmarEliminar');
+
+  let alumnos = {};          // { cedula: nombre }
+  let cedulaEnEdicion = null; // null = modo agregar
+  let cedulaAEliminar = null;
+
+  // ---------- utilidades ----------
+  function mostrarToast(mensaje, tipo = 'ok') {
+    const el = document.createElement('div');
+    el.className = 'toast' + (tipo === 'error' ? ' error' : '');
+    el.textContent = mensaje;
+    toasts.appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  // Evita inyectar HTML/JS al insertar datos de alumnos en el DOM.
+  function escaparHTML(texto) {
+    const div = document.createElement('div');
+    div.textContent = String(texto ?? '');
+    return div.innerHTML;
+  }
+
+  // Se envía como text/plain a propósito: evita el preflight CORS
+  // que Apps Script no maneja bien con POST + Content-Type: application/json.
+  async function llamarAPI(payload) {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({...payload, token: sessionStorage.getItem('ifobeSesion') || ''})
+    });
+    if (!resp.ok) {
+      throw new Error(`El servidor respondió con error (${resp.status}).`);
+    }
+    return resp.json();
+  }
+
+  // ---------- render ----------
+  function renderCargando() {
+    cuerpoTabla.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const fila = document.createElement('div');
+      fila.className = 'fila';
+      fila.innerHTML = `
+        <span></span>
+        <span class="esqueleto" style="width:70%"></span>
+        <span class="esqueleto" style="width:50%"></span>
+        <span></span>`;
+      cuerpoTabla.appendChild(fila);
+    }
+  }
+
+  function renderTabla() {
+    const filtro = buscarInput.value.trim().toLowerCase();
+    const entradas = Object.entries(alumnos)
+      .filter(([cedula, nombre]) =>
+        cedula.toLowerCase().includes(filtro) || nombre.toLowerCase().includes(filtro))
+      .sort((a, b) => a[1].localeCompare(b[1], 'es'));
+
+    document.getElementById('studentTotal').textContent = Object.keys(alumnos).length;
+    document.getElementById('studentMatches').textContent = entradas.length;
+    document.getElementById('studentFilter').textContent = filtro ? 'Coincidencias de la búsqueda' : 'Todos los estudiantes';
+    contador.innerHTML = `<b>${Object.keys(alumnos).length}</b> alumnos registrados`;
+
+    if (entradas.length === 0) {
+      cuerpoTabla.innerHTML = `
+        <div class="vacio">
+          <div class="icono"><i class="bi bi-info-circle" aria-hidden="true"></i></div>
+          <p>${filtro ? 'Ningún alumno coincide con la búsqueda.' : 'Aún no hay alumnos registrados.'}</p>
+        </div>`;
+      return;
+    }
+
+    cuerpoTabla.innerHTML = '';
+    entradas.forEach(([cedula, nombre], i) => {
+      const cedulaSegura = escaparHTML(cedula);
+      const nombreSeguro = escaparHTML(nombre);
+
+      const fila = document.createElement('div');
+      fila.className = 'fila';
+      fila.innerHTML = `
+        <span class="num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="cedula">${cedulaSegura}</span>
+        <span class="nombre"><span class="student-avatar" aria-hidden="true">${escaparHTML(nombre.trim().slice(0, 1).toUpperCase())}</span><span>${nombreSeguro}</span></span>
+        <span class="acciones">
+          <button class="icono-btn" title="Editar" aria-label="Editar a ${nombreSeguro}" data-editar="${cedulaSegura}">
+            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+          </button>
+          <button class="icono-btn peligro" title="Eliminar" aria-label="Eliminar a ${nombreSeguro}" data-eliminar="${cedulaSegura}">
+            <i class="bi bi-trash3" aria-hidden="true"></i>
+          </button>
+        </span>`;
+      cuerpoTabla.appendChild(fila);
+
+      // En mobile: tap sobre la fila para expandir y ver el nombre completo.
+      fila.addEventListener('click', (e) => {
+        if (e.target.closest('.acciones')) return; // no expandir si tocó un botón de acción
+        fila.classList.toggle('expandido');
+      });
+    });
+
+    cuerpoTabla.querySelectorAll('[data-editar]').forEach(btn =>
+      btn.addEventListener('click', (e) => { e.stopPropagation(); abrirFormulario(btn.dataset.editar); }));
+    cuerpoTabla.querySelectorAll('[data-eliminar]').forEach(btn =>
+      btn.addEventListener('click', (e) => { e.stopPropagation(); abrirConfirmarEliminar(btn.dataset.eliminar); }));
+  }
+
+  // ---------- carga ----------
+  async function cargarAlumnos() {
+    document.getElementById('studentTotal').textContent = '—';
+    document.getElementById('studentMatches').textContent = '—';
+    document.getElementById('studentFilter').textContent = 'Consultando el registro…';
+    renderCargando();
+    contador.textContent = 'Cargando…';
+    try {
+      const resp = await fetch(`${API_URL}?accion=alumnos`);
+      if (!resp.ok) throw new Error(`El servidor respondió con error (${resp.status}).`);
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.mensaje || 'Error al cargar');
+      alumnos = data.alumnos || {};
+      renderTabla();
+    } catch (err) {
+      cuerpoTabla.innerHTML = `
+        <div class="vacio">
+          <div class="icono"><i class="bi bi-info-circle" aria-hidden="true"></i></div>
+          <p>No se pudo cargar el registro. Verifica la conexión.</p>
+        </div>`;
+      contador.textContent = '—';
+      document.getElementById('studentFilter').textContent = 'No se pudo actualizar';
+      mostrarToast('No se pudo cargar el registro de alumnos.', 'error');
+    }
+  }
+
+  // ---------- formulario agregar/editar ----------
+  function limpiarErrorCampo(campo) {
+    campo.classList.remove('con-error');
+  }
+
+  async function abrirFormulario(cedula = null) {
+    cedulaEnEdicion = cedula;
+    document.getElementById('inputCorreo').value = '';
+    document.getElementById('programa').value = '';
+    btnGuardar.disabled = !!cedula;
+    campoCedula.classList.remove('con-error');
+    campoNombre.classList.remove('con-error');
+
+    if (cedula) {
+      tituloFormulario.textContent = 'Editar alumno';
+      subtituloFormulario.textContent = 'Actualiza los datos y guarda los cambios.';
+      inputCedula.value = cedula;
+      inputNombre.value = alumnos[cedula];
+    } else {
+      tituloFormulario.textContent = 'Agregar alumno';
+      subtituloFormulario.textContent = 'Se guardará en la hoja "Alumnos".';
+      inputCedula.value = '';
+      inputNombre.value = '';
+    }
+
+    fondoFormulario.classList.add('activo');
+    setTimeout(() => inputCedula.focus(), 50);
+    if (cedula) {
+      try {
+        const data = await llamarAPI({accion:'detalleAlumno',cedula});
+        if (!data.ok) throw Error(data.mensaje || 'No se pudo cargar el expediente.');
+        if (cedulaEnEdicion !== cedula) return;
+        await cargarProgramas();
+        document.getElementById('inputCorreo').value = data.alumno.correo || '';
+        document.getElementById('programa').value = data.alumno.programa || '';
+        btnGuardar.disabled = false;
+      } catch(error) { mostrarToast(error.message, 'error'); }
+    }
+  }
+
+  function cerrarFormulario() {
+    fondoFormulario.classList.remove('activo');
+  }
+
+  async function guardar() {
+    const cedula = inputCedula.value.trim();
+    const nombre = inputNombre.value.trim();
+    const correoInput = document.getElementById('inputCorreo');
+    const correo = correoInput.value.trim();
+    const programa = document.getElementById('programa').value;
+    if (!correoInput.reportValidity()) return;
+    if (document.getElementById('programa').disabled || !programa) { mostrarToast('Selecciona un programa activo.', 'error'); return; }
+
+    campoCedula.classList.toggle('con-error', !cedula);
+    campoNombre.classList.toggle('con-error', !nombre);
+    if (!cedula || !nombre) return;
+
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando…';
+    inputCedula.disabled = true;
+    inputNombre.disabled = true;
+
+    try {
+      const payload = cedulaEnEdicion
+        ? { accion: 'editarAlumno', cedulaOriginal: cedulaEnEdicion, cedula, nombre, correo, programa }
+        : { accion: 'agregarAlumno', cedula, nombre, correo, programa };
+
+      const data = await llamarAPI(payload);
+      if (!data.ok) throw new Error(data.mensaje || 'No se pudo guardar');
+
+      cerrarFormulario();
+      mostrarToast(cedulaEnEdicion ? 'Alumno actualizado.' : 'Alumno agregado.');
+      await cargarAlumnos();
+    } catch (err) {
+      mostrarToast(err.message, 'error');
+    } finally {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = 'Guardar';
+      inputCedula.disabled = false;
+      inputNombre.disabled = false;
+    }
+  }
+
+  // ---------- eliminar ----------
+  function abrirConfirmarEliminar(cedula) {
+    cedulaAEliminar = cedula;
+    nombreAEliminar.textContent = alumnos[cedula];
+    fondoConfirmar.classList.add('activo');
+  }
+
+  function cerrarConfirmar() {
+    fondoConfirmar.classList.remove('activo');
+  }
+
+  async function eliminar() {
+    btnConfirmarEliminar.disabled = true;
+    btnConfirmarEliminar.textContent = 'Eliminando…';
+    try {
+      const data = await llamarAPI({ accion: 'eliminarAlumno', cedula: cedulaAEliminar });
+      if (!data.ok) throw new Error(data.mensaje || 'No se pudo eliminar');
+      cerrarConfirmar();
+      mostrarToast('Alumno eliminado.');
+      await cargarAlumnos();
+    } catch (err) {
+      mostrarToast(err.message, 'error');
+    } finally {
+      btnConfirmarEliminar.disabled = false;
+      btnConfirmarEliminar.textContent = 'Sí, eliminar';
+    }
+  }
+
+  // ---------- eventos ----------
+  document.getElementById('btnAgregar').addEventListener('click', () => abrirFormulario());
+  document.getElementById('btnCancelarFormulario').addEventListener('click', cerrarFormulario);
+  btnGuardar.addEventListener('click', guardar);
+  fondoFormulario.addEventListener('click', e => { if (e.target === fondoFormulario) cerrarFormulario(); });
+
+  document.getElementById('btnCancelarEliminar').addEventListener('click', cerrarConfirmar);
+  btnConfirmarEliminar.addEventListener('click', eliminar);
+  fondoConfirmar.addEventListener('click', e => { if (e.target === fondoConfirmar) cerrarConfirmar(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { cerrarFormulario(); cerrarConfirmar(); }
+    if (e.key === 'Enter' && fondoFormulario.classList.contains('activo')) guardar();
+  });
+
+  // Limpia el estado de error mientras el usuario corrige el campo.
+  inputCedula.addEventListener('input', () => limpiarErrorCampo(campoCedula));
+  inputNombre.addEventListener('input', () => limpiarErrorCampo(campoNombre));
+
+  buscarInput.addEventListener('input', renderTabla);
+
+  cargarAlumnos();
+</script>
+
+<script src="programas.js"></script>
+</body>
+</html>
