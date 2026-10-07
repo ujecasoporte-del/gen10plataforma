@@ -36,6 +36,17 @@ function g10SincronizarAcademico_(){
     const vista=getHoja('NotasGen10',['Matricula ID','Curso ID','Correo','Evaluaciones','Parcial','Definitiva','Actualizada']);
     const registros=vista.getDataRange().getDisplayValues(),n=registros.findIndex(function(r,i){return i>0&&r[0]===matriculas.getRange(index+1,1).getDisplayValues()[0][0]&&r[1]===curso.id;});
     const mid=matriculas.getRange(index+1,1).getDisplayValues()[0][0],valores=[mid,curso.id,usuario.email,JSON.stringify(evaluaciones),parcial===null?'':parcial.toFixed(1),final];
+    const m=matriculas.getRange(index+1,1,1,19).getDisplayValues()[0];
+    let history;try{history=JSON.parse(m[18]||'[]');}catch(ignore){resultado.pendientes.push(usuario.email+': revisa el historial académico de la matrícula.');return;}
+    if(!Array.isArray(history)){resultado.pendientes.push(usuario.email+': historial académico inválido.');return;}
+    const lifecycle=history.filter(function(h){return h.tipo==='gen10EstadoCurso'&&h.curso===curso.id;}).slice(-1)[0];
+    const estadoCurso=curso.estado||'Activo';
+    if((estadoCurso==='Culminado'||lifecycle)&&(!lifecycle||lifecycle.estadoCurso!==estadoCurso)){
+      history.push({tipo:'gen10EstadoCurso',curso:curso.id,estadoCurso:estadoCurso,fecha:ahora,usuario:curso.cerradoPor||'Gen10'});
+      if(JSON.stringify(history).length>4000){resultado.pendientes.push(usuario.email+': historial académico sin espacio para registrar el cierre.');return;}
+      m[2]=ahora;m[8]=estadoCurso==='Culminado'?'Finalizada':'Activa';m[11]=String((Number(m[11])||0)+1);m[15]=final;m[18]=JSON.stringify(history);
+      matriculas.getRange(index+1,1,1,19).setValues([m.map(textoHoja_)]);resultado.actualizadas++;
+    }
     if(n<0||JSON.stringify(registros[n].slice(0,6))!==JSON.stringify(valores)){vista.getRange(n<0?vista.getLastRow()+1:n+1,1,1,7).setNumberFormat('@').setValues([valores.concat([ahora]).map(textoHoja_)]);resultado.actualizadas++;}
   });return resultado;
 }
@@ -325,7 +336,7 @@ function g10Estado_(user) {
   const users = isStudent ? [] : g10Lista_('Usuarios').filter(function(u) { return user.rol === 'admin' || emails.indexOf(u.email) >= 0; });
   const perfil=function(u){return Object.assign(g10Publico_(u),{telefono:u.telefono||'',direccion:u.direccion||'',ciudad:u.ciudad||'',contactoEmergencia:u.contactoEmergencia||'',archivos:u.archivos||[]});};
   return {documentosRequeridos:G10_DOCUMENTOS_REQUERIDOS_,
-    perfil:isStudent?perfil(user):null,expedientes:user.rol==='admin'?users.filter(function(u){return u.rol==='estudiante';}).map(perfil):[],notificaciones:g10Lista_('Notificaciones').filter(function(n){return n.email===user.email;}).slice(-100).reverse(), evaluaciones:'gen10-examenes-v1', limitesExamen:true, intentosExamen:scoped('IntentosExamen').filter(function(a){return !isStudent || (a.email===user.email && taskIds.indexOf(a.tarea)>=0);}), usuario: g10Publico_(user), cursos: courses, inscritos: visibleMembers, lecciones: lessons, tareas: tasks,
+    perfil:Object.assign(g10Publico_(user),{fotoPerfil:user.fotoPerfil||'',telefono:user.telefono||'',direccion:user.direccion||'',ciudad:user.ciudad||'',contactoEmergencia:user.contactoEmergencia||''}),expediente:isStudent?perfil(user):null,expedientes:user.rol==='admin'?users.filter(function(u){return u.rol==='estudiante';}).map(perfil):[],notificaciones:g10Lista_('Notificaciones').filter(function(n){return n.email===user.email;}).slice(-100).reverse(), evaluaciones:'gen10-examenes-v1', limitesExamen:true, intentosExamen:scoped('IntentosExamen').filter(function(a){return !isStudent || (a.email===user.email && taskIds.indexOf(a.tarea)>=0);}), usuario: g10Publico_(user), cursos: courses, inscritos: visibleMembers, lecciones: lessons, tareas: tasks,
     entregas: scoped('Entregas').filter(function(e) { return !isStudent || (e.email === user.email && taskIds.indexOf(e.tarea) >= 0); }),
     progreso: scoped('Progreso').filter(function(p) { return !isStudent || (p.email === user.email && lessonIds.indexOf(p.leccion) >= 0); }), usuarios: users.map(g10Publico_)};
 }
@@ -340,6 +351,43 @@ function g10Revision_(d) {
 }
 function g10Mutar_(user, d) {
   const action = d.accion;
+  if(action==='gen10GuardarDatosUsuario') {
+    // La identidad procede de la sesión; nunca de un correo o ID recibido.
+    const item=Object.assign({},user,{nombre:g10Texto_(d.nombre,120,true)});
+    if(d.fotoPerfil!==undefined){
+      if(typeof d.fotoPerfil!=='string'||d.fotoPerfil.length>30000||(d.fotoPerfil&&!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(d.fotoPerfil)))throw Error('La foto de perfil no es válida. Selecciona otra imagen.');
+      if(d.fotoPerfil){const bytes=Utilities.base64Decode(d.fotoPerfil.split(',')[1]);if(bytes.length<4||(bytes[0]&255)!==255||(bytes[1]&255)!==216||(bytes[2]&255)!==255)throw Error('La foto debe ser una imagen JPEG.');}
+      item.fotoPerfil=d.fotoPerfil;
+    }
+    ['telefono','direccion','ciudad','contactoEmergencia'].forEach(function(k){item[k]=g10Texto_(d[k]||'',k==='direccion'?300:120,false);});
+    return g10Publico_(g10Guardar_('Usuarios',item,g10Revision_(d)));
+  }
+  if(action==='gen10EstadoCurso') {
+    const course=g10Curso_(user,g10Id_(d),true);
+    if(['Activo','Cerrado','Culminado'].indexOf(d.estado)<0)throw Error('Estado de curso inválido.');
+    if(course.estado==='Culminado'&&d.estado!=='Culminado'&&user.rol!=='admin')throw Error('Solo administración puede reabrir un curso culminado.');
+    if(d.estado==='Activo'&&user.rol!=='admin')throw Error('Solo administración puede reabrir un curso.');
+    if(d.estado!=='Activo'&&g10Lista_('IntentosExamen').some(function(a){return a.curso===course.id&&!a.finalizado&&(!a.vence||Date.parse(a.vence)>Date.now());}))throw Error('Hay exámenes en curso. Espera a que finalicen antes de cerrar.');
+    if(d.estado==='Culminado'&&g10Lista_('Entregas').some(function(e){return e.curso===course.id&&e.nota==null;}))throw Error('Califica las entregas pendientes antes de culminar el curso.');
+    const history=(course.historialEstado||[]).concat([{estado:d.estado,anterior:course.estado||'Activo',fecha:new Date().toISOString(),usuario:user.email}]);
+    if(history.length>100)throw Error('El historial de estados alcanzó su capacidad.');
+    return g10Guardar_('Cursos',Object.assign({},course,{estado:d.estado,fechaCierre:d.estado==='Activo'?'':new Date().toISOString(),cerradoPor:d.estado==='Activo'?'':user.email,historialEstado:history}),g10Revision_(d));
+  }
+  // También se exige en el servidor: ocultar botones no basta para cerrar el curso.
+  const contentActions=['gen10Inscribir','gen10GuardarLeccion','gen10GuardarTarea'];
+  const studentActions=['gen10Entregar','gen10IniciarExamen','gen10GuardarRespuestaExamen','gen10ResponderExamen','gen10Completar'];
+  let affected=null;
+  if(contentActions.indexOf(action)>=0)affected=g10Curso_(user,d.curso,true);
+  if(action==='gen10GuardarCurso')affected=g10Lista_('Cursos').find(function(c){return c.id===d.id;});
+  if(studentActions.indexOf(action)>=0){
+    const entry=g10Lista_(action==='gen10Completar'?'Lecciones':'Tareas').find(function(t){return t.id===(d.leccion||d.tarea);});
+    if(entry)affected=g10Curso_(user,entry.curso,false);
+  }
+  if(action==='gen10Calificar'){
+    const delivery=g10Lista_('Entregas').find(function(e){return e.id===d.entrega;});
+    if(delivery)affected=g10Curso_(user,delivery.curso,true);
+  }
+  if(affected&&affected.estado&&affected.estado!=='Activo'&&(action!=='gen10Calificar'||affected.estado==='Culminado'))throw Error('El curso está '+affected.estado.toLowerCase()+'. Solo permite consulta; solicita su reapertura a administración.');
   if(action==='gen10GuardarPerfil') {
     if(user.rol!=='estudiante')throw Error('Esta opción es para estudiantes.');
     const item=Object.assign({},user,{nombre:g10Texto_(d.nombre,120,true)});
@@ -377,7 +425,7 @@ function g10Mutar_(user, d) {
     if (teacher.rol !== 'docente') throw Error('Selecciona un docente activo.');
     const pesoTareas = d.pesoTareas === undefined ? (existing && existing.pesoTareas != null ? existing.pesoTareas : null) : d.pesoTareas;
     if (pesoTareas !== null && (!Number.isInteger(pesoTareas) || pesoTareas < 1 || pesoTareas > 99)) throw Error('El porcentaje de tareas debe estar entre 1 y 99; exámenes usa el porcentaje restante.');
-    return g10GuardarArchivos_('Cursos', {id: id, titulo: g10Texto_(d.titulo, 140, true), descripcion: g10Texto_(d.descripcion, 4000, false), docente: teacher.email, publicado: d.publicado === true, pesoTareas:pesoTareas}, d, existing);
+    return g10GuardarArchivos_('Cursos', Object.assign({},existing||{estado:'Activo'},{id: id, titulo: g10Texto_(d.titulo, 140, true), descripcion: g10Texto_(d.descripcion, 4000, false), docente: teacher.email, publicado: d.publicado === true, pesoTareas:pesoTareas}), d, existing);
   }
   if (['gen10Inscribir', 'gen10GuardarLeccion', 'gen10GuardarTarea'].indexOf(action) >= 0) {
     g10Curso_(user, d.curso, true);
@@ -514,6 +562,7 @@ function gen10Api_(d) {
         data={registro:n.leida?n:g10Guardar_('Notificaciones',Object.assign({},n,{leida:true}),n.revision)};
       } else {
         const tables={gen10GuardarCurso:'Cursos',gen10Inscribir:'Inscritos',gen10GuardarLeccion:'Lecciones',gen10GuardarTarea:'Tareas',gen10Calificar:'Entregas',gen10ResponderExamen:'Entregas',gen10Entregar:'Entregas'};
+        if(d.accion==='gen10EstadoCurso')tables[d.accion]='Cursos';
         const table=tables[d.accion], id=d.accion==='gen10Inscribir'?d.curso+':'+d.email:d.accion==='gen10Calificar'?d.entrega:(d.accion==='gen10ResponderExamen'||d.accion==='gen10Entregar')?d.tarea+':'+user.email:d.id;
         const old=table?g10Lista_(table).find(function(r){return r.id===id;}):null;
         const saved=g10Mutar_(user,d);
@@ -638,6 +687,10 @@ function g10AvisarCambio_(table,item,old,recuperar) {
       mensaje=tarea.titulo+': '+Number(item.nota).toFixed(1)+' / 5.0.'+(item.comentario?' '+item.comentario:'');
       recipients=[item.email];
     }
+  }else if(table==='Cursos'&&old&&(old.estado||'Activo')!==(item.estado||'Activo')){
+    if(!curso.publicado)return;
+    titulo='Curso '+(item.estado==='Activo'?'reabierto':item.estado.toLowerCase());
+    mensaje='El curso «'+curso.titulo+'» está '+(item.estado||'Activo').toLowerCase()+'. '+(item.estado==='Activo'?'Las actividades vuelven a estar disponibles.':'Ingresa a Gen10 y revisa tus notas en «Notas y avance». Puedes consultar tus materiales y resultados. No se reciben nuevas entregas. Si alguna nota aparece pendiente o tienes una duda, comunícate con tu docente.');
   }else{
     if(table!=='Cursos'&&!curso.publicado)return;
     if(!item.publicado&&!(old&&old.publicado))return;

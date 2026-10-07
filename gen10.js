@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const files = window.G10Files;
   const roles = {admin:'Administración', docente:'Docente', estudiante:'Estudiante'};
-  const labels = {perfil:'Mis datos y documentos',inicio:'Mi inicio', cursos:'Mis cursos', tareas:'Tareas', examenes:'Exámenes', seguimiento:'Notas y avance', administracion:'Administración', curso:'Mi curso'};
+  const labels = {perfil:'Mi perfil', expediente:'Datos y documentos del alumno',inicio:'Mi inicio', cursos:'Mis cursos', tareas:'Tareas', examenes:'Exámenes', seguimiento:'Notas y avance', administracion:'Administración', curso:'Mi curso'};
   let token = sessionStorage.getItem('gen10Sesion') || '', data = null, view = 'inicio', courseId = '', courseTab = 'lecciones', pendingEmail = '', editorSave = null, loading = false, saving = false;
   let authPurpose = 'activar', authBusy = false;
   let pendingRequests=0;
@@ -28,7 +28,15 @@
   const inCourse = (key,id) => data[key].filter(r => r.curso === id);
   const person = email => data.usuarios.find(u => u.email === email)?.nombre || (email === data.usuario.email ? data.usuario.nombre : email);
   const badge = (text,kind='') => `<span class="badge ${kind}">${esc(text)}</span>`;
-  const button = (text,action,id='',quiet=true) => `<button type="button" ${quiet?'class="quiet"':''} data-action="${action}" data-id="${esc(id)}">${esc(text)}</button>`;
+  const button = (text,action,id='',quiet=true) => {
+    const tables={completar:'lecciones',leccion:'lecciones',tarea:'tareas',examen:'tareas',entregar:'tareas','responder-examen':'tareas',calificar:'entregas',inscribir:'inscritos'};
+    if(tables[action]||action==='editar-curso'){
+      const entry=data?.[tables[action]]?.find(r=>r.id===id);
+      const c=data?.cursos.find(c=>c.id===(action==='editar-curso'?id:entry?.curso||(view==='curso'?courseId:'')));
+      if(c?.estado&&c.estado!=='Activo'&&(action!=='calificar'||c.estado==='Culminado'))return '';
+    }
+    return `<button type="button" ${quiet?'class="quiet"':''} data-action="${action}" data-id="${esc(id)}">${esc(text)}</button>`;
+  };
   const empty = text => `<p class="empty">${esc(text)}</p>`;
   const isExam = t => t.tipo === 'examen';
   const validGrade = e => e && typeof e.nota === 'number' && Number.isFinite(e.nota) && e.nota >= 0 && e.nota <= 5;
@@ -72,12 +80,15 @@
   }
   function showAccess() {
     files.clear();
+    window.G10Profile?.header();
+    if ($('welcomeDialog').open) $('welcomeDialog').close();
+    $('notifications').open=false;$('notificationList').replaceChildren();
     data=null; token=''; sessionStorage.removeItem('gen10Sesion'); $('campus').hidden=true; $('account').hidden=true; $('access').hidden=false;
     authScreen('login'); $('email').disabled=false;
     if ($('editor').open) $('editor').close();
     $('view').replaceChildren();
   }
-  async function refresh() {
+  async function refresh(welcomeOnLogin=false) {
     if (loading) return;
     loading=true; $('refresh').disabled=true;
     try {
@@ -85,11 +96,15 @@
       rememberAccount(data.usuario.email);
       $('access').hidden=true; $('campus').hidden=false; $('account').hidden=false;
       $('accountName').textContent=`${data.usuario.nombre} · ${roles[data.usuario.rol]}`;
+      window.G10Profile?.header(data.perfil);
       $('adminNav').hidden=!admin();
-      $('profileNav').hidden=!student()&&!admin();
+      $('profileNav').hidden=false;
+      $('studentDataNav').hidden=!student()&&!admin();
+      if(view==='expediente'&&!student()&&!admin())view='perfil';
       if (view==='administracion' && !admin()) view='inicio';
       if (view==='curso' && !data.cursos.some(c=>c.id===courseId)) view='cursos';
       render();
+      window.G10Profile?.welcome(data.usuario,welcomeOnLogin===true);
     } catch (error) {
       if (/sesión|acceso no está activo/.test(error.message)) showAccess();
       throw error;
@@ -102,7 +117,7 @@
   }
   function progressBar(p) { return `<div class="progress-label"><span>${p.done} de ${p.total} lecciones completadas</span><strong>${p.percent}%</strong></div><progress max="100" value="${p.percent}" aria-label="Progreso de lecciones: ${p.percent}%"></progress>`; }
   function courseCard(c) {
-    return `<article class="course-card"><div class="course-cover"><i class="bi bi-journal-richtext" aria-hidden="true"></i>${files.cover(c)}${badge(c.publicado?'PUBLICADO':'BORRADOR',c.publicado?'':'draft')}</div><div class="course-body"><span class="course-kicker">CAMPUS GEN10 · IFOBE</span><h3>${esc(c.titulo)}</h3><p>${esc(c.descripcion || 'Tu espacio de aprendizaje y actividades.')}</p><div class="course-meta"><span><i class="bi bi-journal-text" aria-hidden="true"></i> ${inCourse('lecciones',c.id).length} lecciones</span><span><i class="bi bi-check2-square" aria-hidden="true"></i> ${inCourse('tareas',c.id).filter(t=>!isExam(t)).length} tareas · ${inCourse('tareas',c.id).filter(isExam).length} exámenes</span></div>${student()?progressBar(progress(c.id)): `<p class="hint">${inCourse('inscritos',c.id).filter(e=>e.activo).length} estudiantes asignados</p>`}${button(student()?'Continuar aprendiendo →':'Gestionar curso →','curso',c.id,false)}</div></article>`;
+    return `<article class="course-card"><div class="course-cover"><i class="bi bi-journal-richtext" aria-hidden="true"></i>${files.cover(c)}${badge(c.publicado?'PUBLICADO':'BORRADOR',c.publicado?'':'draft')}</div><div class="course-body"><span class="course-kicker">CAMPUS GEN10 · IFOBE</span><h3>${esc(c.titulo)}</h3>${c.estado && c.estado!=='Activo'?badge(c.estado):''}<p>${esc(c.descripcion || 'Tu espacio de aprendizaje y actividades.')}</p><div class="course-meta"><span><i class="bi bi-journal-text" aria-hidden="true"></i> ${inCourse('lecciones',c.id).length} lecciones</span><span><i class="bi bi-check2-square" aria-hidden="true"></i> ${inCourse('tareas',c.id).filter(t=>!isExam(t)).length} tareas · ${inCourse('tareas',c.id).filter(isExam).length} exámenes</span></div>${student()?progressBar(progress(c.id)): `<p class="hint">${inCourse('inscritos',c.id).filter(e=>e.activo).length} estudiantes asignados</p>`}${button(student()?'Continuar aprendiendo →':'Gestionar curso →','curso',c.id,false)}</div></article>`;
   }
   function heading(title,action='') { return `<div class="section-heading"><h2>${esc(title)}</h2>${action}</div>`; }
   function renderStudentOverview() {
@@ -136,7 +151,7 @@
     const courses=id?data.cursos.filter(c=>c.id===id):data.cursos;
     return `<p class="grades-note">Escala de 0.0 a 5.0. Cada categoría promedia sus evaluaciones publicadas y calificadas con el mismo peso; 0.0 sí cuenta. Las pendientes no se convierten en cero. El docente define los porcentajes de tareas y exámenes. La nota final aparece cuando ambas categorías tienen evaluaciones y todas están calificadas. Las evaluaciones se vinculan al expediente académico del estudiante.</p>${courses.map(c=>{
       const members=student()?[{email:data.usuario.email,activo:true}]:inCourse('inscritos',c.id).filter(e=>e.activo);
-      return `<section class="panel"><h3>${esc(c.titulo)}</h3><p class="hint">${Number.isInteger(c.pesoTareas)?`Tareas: ${c.pesoTareas}% · Exámenes: ${100-c.pesoTareas}%.`:'Porcentajes pendientes de configurar por el docente.'}</p>${members.map(m=>{
+      return `<section class="panel"><h3>${esc(c.titulo)}</h3>${student()&&['Cerrado','Culminado'].includes(c.estado)?button('Descargar calificaciones','descargar-notas',c.id):''}<p class="hint">${Number.isInteger(c.pesoTareas)?`Tareas: ${c.pesoTareas}% · Exámenes: ${100-c.pesoTareas}%.`:'Porcentajes pendientes de configurar por el docente.'}</p>${members.map(m=>{
         const b=gradeBreakdown(c,m.email),p=progress(c.id,m.email);
         const summary=(name,g,weight)=>`<article class="stat"><strong>${score(g.average)}</strong><span>${name} · ${g.graded}/${g.items.length} calificadas${b.configured?` · ${weight}%`:''}</span><p class="hint">Aporte: ${b.configured && g.average!==null?(g.average*weight/100).toFixed(2):'Pendiente'}</p></article>`;
         return `<div class="grade-student"><h4>${esc(person(m.email))}</h4>${progressBar(p)}<div class="stats-grid">${summary('Tareas',b.tasks,c.pesoTareas)}${summary('Exámenes',b.exams,100-c.pesoTareas)}<article class="stat"><strong>${score(b.final)}</strong><span>Nota final / 5.0</span><p class="hint">Resultado ponderado parcial: ${score(b.partial)}</p></article></div><div class="table-wrap"><table><thead><tr><th>Evaluación</th><th>Tipo</th><th>Estado</th><th>Nota / 5.0</th><th>Retroalimentación</th><th>Acción</th></tr></thead><tbody>${b.rows.map(({task:t,submission:e})=>`<tr><td>${esc(t.titulo)}</td><td>${isExam(t)?'Examen':'Tarea'}</td><td>${validGrade(e)?'Calificada':e?'Por calificar':'Sin entregar'}</td><td><strong>${validGrade(e)?score(e.nota):'Pendiente'}</strong></td><td>${esc(e?.comentario||'—')}</td><td>${!student()&&e&&!e.automatica?button(validGrade(e)?'Revisar nota':'Calificar','calificar',e.id):'—'}</td></tr>`).join('')||'<tr><td colspan="6">Todavía no hay evaluaciones publicadas.</td></tr>'}</tbody></table></div></div>`;
@@ -162,7 +177,9 @@
       const members=inCourse('inscritos',c.id);
       body=heading('Estudiantes del curso',button('Asignar estudiante','inscribir'))+`<p class="staff-note">Asigna el correo de un estudiante que administración haya habilitado previamente. Esta asignación da acceso al curso dentro de Gen10.</p>`+(members.length?`<div class="panel table-wrap"><table><thead><tr><th>Estudiante</th><th>Correo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${members.map(m=>`<tr><td>${esc(person(m.email))}</td><td>${esc(m.email)}</td><td>${m.activo?'Activo':'Retirado'}</td><td>${button('Editar acceso','inscribir',m.id)}</td></tr>`).join('')}</tbody></table></div>`:empty('No hay estudiantes asignados.'));
     }
-    return `${button('← Mis cursos','vista-cursos')}<div class="section-heading"><h2>${esc(c.titulo)}</h2>${!student()?button('Editar curso','editar-curso',c.id):''}</div><div class="course-hero">${files.cover(c)}</div><p class="prose muted">${esc(c.descripcion)}</p>${files.render(c.archivos,"Cursos",c.id)}${student()?progressBar(progress(c.id)):badge(c.publicado?'Publicado':'Borrador',c.publicado?'':'draft')}<div class="tabs" role="group" aria-label="Secciones del curso">${tabs.map(([key,label])=>`<button type="button" data-action="tab" data-id="${key}" aria-pressed="${courseTab===key}">${label}</button>`).join('')}</div>${body}`;
+    const status=c.estado||'Activo';
+    const lifecycle=`<section class="course-lifecycle"><div><strong>${esc(status)}</strong><p>${status==='Culminado'?'Curso culminado. Conserva sus materiales, notas y entregas para consulta.':status==='Cerrado'?'Nuevas actividades cerradas. El docente puede terminar de calificar.':'Curso abierto para actividades y entregas.'}</p></div>${!student()?(status==='Culminado'&&!admin()?'':button('Cambiar estado','estado-curso',c.id)):''}</section>`;
+    return `${button('← Mis cursos','vista-cursos')}<div class="section-heading"><h2>${esc(c.titulo)}</h2>${!student()?button('Editar curso','editar-curso',c.id):''}</div>${lifecycle}<div class="course-hero">${files.cover(c)}</div><p class="prose muted">${esc(c.descripcion)}</p>${files.render(c.archivos,"Cursos",c.id)}${student()?progressBar(progress(c.id)):badge(c.publicado?'Publicado':'Borrador',c.publicado?'':'draft')}<div class="tabs" role="group" aria-label="Secciones del curso">${tabs.map(([key,label])=>`<button type="button" data-action="tab" data-id="${key}" aria-pressed="${courseTab===key}">${label}</button>`).join('')}</div>${body}`;
   }
   function renderAdmin() {
     return `${heading('Administración del campus',button('Habilitar usuario','usuario','',false))}<p class="staff-note">Habilita primero a docentes y estudiantes. Luego crea cursos, asigna un docente y agrega estudiantes al grupo. Las solicitudes públicas de inscripción no conceden acceso automáticamente.</p><div class="panel table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${data.usuarios.map(u=>`<tr><td>${esc(u.nombre)}</td><td>${esc(u.email)}</td><td>${esc(roles[u.rol])}</td><td>${u.activo?'Activo':'Inactivo'}</td><td>${button('Editar','usuario',u.id)}</td></tr>`).join('')}</tbody></table></div>${heading('Cursos',button('Crear curso','editar-curso','',false))}${data.cursos.length?`<div class="course-grid">${data.cursos.map(courseCard).join('')}</div>`:empty('Crea un curso y asígnalo a un docente activo.')}`;
@@ -174,7 +191,8 @@
     document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view || (view==='curso'&&b.dataset.view==='cursos'))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
     $('breadcrumb').textContent=labels[view];
     let html;
-    if(view==='perfil') html=renderProfile();
+    if(view==='perfil') html=renderUserProfile();
+    else if(view==='expediente') html=renderProfile();
     else if(view==='inicio') html=renderHome();
     else if(view==='cursos') html=heading(student()?'Mis cursos':admin()?'Todos los cursos':'Cursos a mi cargo',admin()?button('Crear curso','editar-curso','',false):'')+(data.cursos.length?`<div class="course-grid">${data.cursos.map(courseCard).join('')}</div>`:empty('No tienes cursos asignados todavía.'));
     else if(view==='curso') html=renderCourse();
@@ -183,6 +201,7 @@
     else if(view==='seguimiento') html=heading('Notas y avance')+tracking();
     else html=renderAdmin();
     $('view').innerHTML=html;
+    renderNotices();
     files.hydrate(api);
   }
   function field(label,name,value='',type='text',required=true,max=140) { return `<label for="edit-${name}">${label}${required?' *':''}</label><input id="edit-${name}" name="${name}" type="${type}" value="${esc(value)}" ${required?'required':''} maxlength="${max}"${type==='url'?' placeholder="https://…"':''}>`; }
@@ -198,15 +217,53 @@
     openEditor(u?'Editar acceso':'Habilitar usuario',field('Nombre','nombre',u?.nombre)+field('Correo','email',u?.email,'email',true,150)+field('Documento del estudiante','cedula',u?.cedula,'text',false,40)+select('Rol','rol',Object.entries(roles),u?.rol||'estudiante')+check('Acceso activo','activo',u?u.activo:true),f=>api('gen10GuardarUsuario',{cedula:f.cedula,nombre:f.nombre,email:u?.email||f.email,rol:f.rol,activo:f.activo==='on',revision:u?.revision||0}));
     if(u)$('edit-email').readOnly=true;
   }
+  function renderNotices() {
+    const notices=(data.notificaciones||[]).filter(n=>n.email===data.usuario.email);
+    const unread=notices.filter(n=>!n.leida).length;
+    $('notificationCount').hidden=!unread;
+    $('notificationCount').textContent=unread>99?'99+':String(unread);
+    $('notificationList').innerHTML=notices.length?notices.slice(0,20).map(n=>'<details class="notification-item"><summary>'+esc(n.titulo)+'</summary><p>'+esc(n.mensaje)+'</p>'+(n.leida?'':'<button type="button" class="quiet" data-notice-id="'+esc(n.id)+'">Marcar como leído</button>')+'</details>').join(''):empty('No tienes avisos.');
+  }
+  async function downloadGrades(id) {
+    const c=data.cursos.find(c=>c.id===id);
+    if(!student()||!c||!['Cerrado','Culminado'].includes(c.estado))throw Error('La descarga se habilita al cerrar el curso.');
+    await window.IFOBEGradesPDF({course:c,user:data.usuario,breakdown:gradeBreakdown(c,data.usuario.email),score,isExam,validGrade});
+  }
+  function renderUserProfile() {
+    const p=data.perfil||data.usuario;
+    return heading('Mi perfil',button('Editar mis datos','editar-datos-usuario','',false))+
+      '<section class="panel">'+(window.G10Profile?.avatar(p)||'')+'<h3>'+esc(p.nombre)+'</h3><p>'+esc(roles[p.rol])+'</p><p>Correo: '+esc(p.email)+'</p><p>Teléfono: '+esc(p.telefono||'Pendiente')+'</p><p>Dirección: '+esc(p.direccion||'Pendiente')+'</p><p>Ciudad: '+esc(p.ciudad||'Pendiente')+'</p><p>Contacto de emergencia: '+esc(p.contactoEmergencia||'Pendiente')+'</p></section>';
+  }
+  function editUserProfile() {
+    const p=data.perfil||data.usuario;
+    openEditor('Editar mi perfil',(window.G10Profile?.fields(p)||'')+field('Nombre completo','nombre',p.nombre,'text',true,120)+field('Teléfono','telefono',p.telefono,'tel',false,120)+field('Dirección','direccion',p.direccion,'text',false,300)+field('Ciudad','ciudad',p.ciudad,'text',false,120)+field('Contacto de emergencia','contactoEmergencia',p.contactoEmergencia,'text',false,120),async f=>api('gen10GuardarDatosUsuario',{...f,...await window.G10Profile?.collect(),revision:p.revision}));
+  }
   function renderProfile() {
-    const profiles=student()?[data.perfil]:admin()?data.expedientes:[];
-    return heading(student()?'Mis datos y documentos':'Expedientes de estudiantes',student()?button('Actualizar datos y documentos','editar-perfil','',false):'')+(profiles||[]).filter(Boolean).map(p=>`<section class="panel"><h3>${esc(p.nombre)}</h3><p>Documento: ${esc(p.cedula||'Pendiente')} · Correo de acceso: ${esc(p.email)}</p><p>Teléfono: ${esc(p.telefono||'Pendiente')}<br>Dirección: ${esc(p.direccion||'Pendiente')}<br>Ciudad: ${esc(p.ciudad||'Pendiente')}<br>Contacto de emergencia: ${esc(p.contactoEmergencia||'Pendiente')}</p><h4>Documentos requeridos</h4>${(data.documentosRequeridos||[]).map(r=>'<p><strong>'+esc(r.nombre)+'</strong> · '+(p.archivos?.some(f=>f.categoria===r.id)?'Entregado':'Pendiente')+'</p>'+files.render((p.archivos||[]).filter(f=>f.categoria===r.id),'Usuarios',p.id)).join('')}<h4>Otros adjuntos anteriores</h4>${files.render((p.archivos||[]).filter(f=>!f.categoria),'Usuarios',p.id)}${p.archivos?.length?'':empty('Todavía no hay documentos adjuntos.')}</section>`).join('');
+    const profiles=student()?[data.expediente||data.perfil]:admin()?data.expedientes:[];
+    return heading(student()?'Mis datos y documentos':'Expedientes de estudiantes',student()?button('Actualizar datos y documentos','editar-perfil','',false):'')+(profiles||[]).filter(Boolean).map(p=>{
+      const documents=(data.documentosRequeridos||[]).map(r=>{
+        const attachments=(p.archivos||[]).filter(f=>f.categoria===r.id);
+        return '<details class="document-section"><summary>'+esc(r.nombre)+' · '+(attachments.length?'Entregado':'Pendiente')+'</summary>'+files.render(attachments,'Usuarios',p.id)+(attachments.length?'':empty('No se ha adjuntado este documento.'))+'</details>';
+      }).join('');
+      const previous=(p.archivos||[]).filter(f=>!f.categoria);
+      return '<details class="panel student-record"><summary>'+esc(p.nombre)+'</summary><p>Documento: '+esc(p.cedula||'Pendiente')+'<br>Correo: '+esc(p.email)+'</p><details class="document-section"><summary>Datos del alumno</summary><p>Teléfono: '+esc(p.telefono||'Pendiente')+'<br>Dirección: '+esc(p.direccion||'Pendiente')+'<br>Ciudad: '+esc(p.ciudad||'Pendiente')+'<br>Contacto de emergencia: '+esc(p.contactoEmergencia||'Pendiente')+'</p></details>'+documents+(previous.length?'<details class="document-section"><summary>Otros adjuntos</summary>'+files.render(previous,'Usuarios',p.id)+'</details>':'')+'</details>';
+    }).join('');
   }
   function editProfile() {
-    const p=data.perfil;
+    const p=data.expediente||data.perfil;
     if(!student()||!p)throw Error('Publica la nueva versión de Apps Script para habilitar el perfil.');
     openEditor('Actualizar mis datos y documentos',field('Nombre completo','nombre',p.nombre,'text',true,120)+field('Documento','cedula',p.cedula,'text',true,40)+field('Teléfono','telefono',p.telefono,'tel',false,120)+field('Dirección','direccion',p.direccion,'text',false,300)+field('Ciudad','ciudad',p.ciudad,'text',false,120)+field('Contacto de emergencia (nombre y teléfono)','contactoEmergencia',p.contactoEmergencia,'text',false,120)+`<p class="hint">Adjunta tu cédula, acta de bachiller y resultados de las pruebas ICFES. Solo tú y administración pueden consultarlos. Para corregir tu documento o correo de acceso, contacta a administración.</p>`+files.documentFields(data.documentosRequeridos||[],p.archivos),async f=>api('gen10GuardarPerfil',{...f,...await files.collectDocuments(data.documentosRequeridos||[],p.archivos),revision:p.revision}));
     if(p.cedula)$('edit-cedula').readOnly=true;
+  }
+  function editCourseState(id) {
+    const c=data.cursos.find(c=>c.id===id);
+    if(!c||student())return;
+    const options=[['Cerrado','Cerrado · terminar calificaciones'],['Culminado','Culminado · solo consulta']];
+    if(admin())options.unshift(['Activo','Activo · reabrir actividades']);
+    openEditor('Estado del curso o programa',`<p><strong>${esc(c.titulo)}</strong></p><p>Cerrar detiene nuevas entregas, exámenes y cambios de contenido. Culminar también bloquea las calificaciones. Las notas y archivos se conservan; esto no aprueba automáticamente a los estudiantes.</p><p class="hint">No se puede cerrar mientras haya exámenes en curso ni culminar con entregas por calificar. Solo administración puede reabrir.</p>`+select('Nuevo estado','estado',options,c.estado||'Cerrado')+check('Confirmo el cambio de estado de este curso','confirmar',false),async f=>{
+      if(f.confirmar!=='on')throw Error('Confirma el cambio de estado antes de guardar.');
+      return api('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:f.estado});
+    });
   }
   function editCourse(id) {
     requireEvaluations();
@@ -307,18 +364,29 @@
     showQuestion();tick();
   }
   document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.view;clearNotice();render();}));
+  $('notificationList').addEventListener('click',async event=>{
+    const b=event.target.closest('[data-notice-id]');if(!b||!data)return;
+    b.disabled=true;
+    try{await api('gen10LeerNotificacion',{id:b.dataset.noticeId});await refresh();}
+    catch(error){notice(error.message,'error');b.disabled=false;}
+  });
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')$('notifications').open=false;});
+  document.addEventListener('click',event=>{if(!$('notifications').contains(event.target))$('notifications').open=false;});
   $('view').addEventListener('click',async event=>{
     const b=event.target.closest('[data-action]'); if(!b || !data)return;
     const {action,id}=b.dataset;
     try {
       if(action==='leer-aviso'){b.disabled=true;await api('gen10LeerNotificacion',{id});await refresh();}
+      else if(action==='descargar-notas'){b.disabled=true;try{await downloadGrades(id);}finally{b.disabled=false;}}
       else if(action==='curso'){courseId=id;courseTab='lecciones';view='curso';render();window.scrollTo({top:0,behavior:'auto'});}
       else if(action==='vista-cursos'){view='cursos';render();}
       else if(['vista-tareas','vista-examenes','vista-seguimiento'].includes(action)){view=action.slice(6);render();}
       else if(action==='tab'){courseTab=id;render();}
       else if(action==='usuario')editUser(id);
       else if(action==='editar-perfil')editProfile();
+      else if(action==='editar-datos-usuario')editUserProfile();
       else if(action==='editar-curso')editCourse(id);
+      else if(action==='estado-curso')editCourseState(id);
       else if(action==='leccion'||action==='tarea')editContent(action,id);
       else if(action==='examen')editExam(id);
       else if(action==='responder-examen')await answerExam(id);
@@ -376,7 +444,7 @@
     token=result.token;sessionStorage.setItem('gen10Sesion',token);view='inicio';
     rememberAccount(result.usuario?.email || ($('verifyCode').hidden?$('loginEmail').value:pendingEmail));
     ['loginPassword','newPassword','confirmPassword','code'].forEach(id=>$(id).value='');
-    clearNotice();await refresh();
+    clearNotice();await refresh(true);
   }
   function beginActivation(purpose) {
     if(authBusy)return;authPurpose=purpose;clearNotice();$('email').value=$('loginEmail').value;authScreen('request');$('email').focus();

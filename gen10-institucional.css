@@ -131,7 +131,7 @@ input:focus,select:focus,textarea:focus{outline-color:#598ac9}
 .art-card{background:#edf4ff;box-shadow:10px 12px 0 #021a3e}
 .art-circle{border-color:#5480b2}
 .art-lines b{background:#7294bf}.art-lines b:last-child{background:#ccdff8}
-.campus-layout{grid-template-columns:240px minmax(0,1fr);padding:0;max-width:none;min-height:calc(100svh - 160px)}
+.campus-layout{grid-template-columns:220px minmax(0,1fr);padding:0;max-width:none;min-height:calc(100svh - 160px)}
 #contenido:has(.campus-layout:not([hidden])){max-width:none}
 .campus-sidebar{position:relative;background:linear-gradient(145deg,#052759,#021a3e);color:white;padding:28px 12px;border:0}
 .campus-sidebar>.eyebrow{padding-left:15px;color:#aec5e5}
@@ -170,8 +170,9 @@ input:focus,select:focus,textarea:focus{outline-color:#598ac9}
  .campus-footer{padding:20px 14px}
 }
 
+.mobile-menu-toggle{display:none}
 /* Keep navigation anchored while the document content scrolls. */
-:root{--campus-header-height:98px;--campus-menu-height:76px}
+:root{--campus-header-height:80px;--campus-menu-height:76px}
 html{scroll-padding-top:calc(var(--campus-header-height) + 16px)}
 body{padding-top:var(--campus-header-height)}
 .campus-top{position:fixed;inset:0 0 auto;z-index:100;height:var(--campus-header-height);min-height:0;flex-wrap:nowrap;margin:0;width:100%}
@@ -180,9 +181,9 @@ body{padding-top:var(--campus-header-height)}
 #accountName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #logout{flex-shrink:0}
 .skip-link{position:fixed;z-index:110}
-.campus-sidebar{position:fixed;inset:var(--campus-header-height) auto 0 0;z-index:90;width:240px;overflow-y:auto;overscroll-behavior:contain}
+.campus-sidebar{position:fixed;inset:var(--campus-header-height) auto 0 0;z-index:90;width:220px;overflow-y:auto;overscroll-behavior:contain}
 .campus-content{grid-column:2;min-width:0}
-body:has(#campus:not([hidden])) .campus-footer{margin-left:240px}
+body:has(#campus:not([hidden])) .campus-footer{margin-left:220px}
 @media(max-width:900px){
  .top-caption{display:none}
  body:has(#campus:not([hidden])){padding-top:calc(var(--campus-header-height) + var(--campus-menu-height))}
@@ -266,13 +267,13 @@ body:has(#access:not([hidden])) #access .access-form{padding:48px;background:#ff
 .panel,.course-card,.stat{border-color:#e0e7f0;box-shadow:0 5px 20px #142d4e05;border-radius:16px}
 .course-card{transition:box-shadow .2s,transform .2s}
 .course-card:hover{box-shadow:0 12px 30px #142d4e12;transform:translateY(-2px)}
-.course-card .course-cover{height:240px;padding:0;background:#eef2f7}
+.course-card .course-cover{height:220px;padding:0;background:#eef2f7}
 .course-cover .g10-cover-image{object-fit:contain;padding:12px}
 .course-cover:has(.g10-cover-image:not([hidden]))>.bi{visibility:hidden}
 .course-cover .badge{top:auto;bottom:10px;right:10px;font-size:10px}
 .course-hero{background:#eef2f7;border-radius:16px;overflow:hidden;margin:20px 0}
 .course-hero img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain;margin:0;border-radius:0;padding:16px}
-.cover-preview{height:240px;object-fit:contain;background:#eef2f7;padding:12px}
+.cover-preview{height:220px;object-fit:contain;background:#eef2f7;padding:12px}
 .loading-dialog{width:min(360px,calc(100vw - 40px));padding:36px 28px;text-align:center;border:1px solid #dce4ef;border-radius:22px;box-shadow:0 24px 80px #081d3833;color:#142d4e}
 .loading-dialog::backdrop{background:#081d3870;backdrop-filter:blur(5px)}
 .loading-dialog h2{font-size:22px;margin:22px 0 10px}
@@ -282,31 +283,25 @@ body:has(#access:not([hidden])) #access .access-form{padding:48px;background:#ff
 @keyframes campus-spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){body:has(#access:not([hidden])) #access{grid-template-columns:1fr;border-radius:18px}body:has(#access:not([hidden])) #access .access-story{padding:28px;min-height:0}body:has(#access:not([hidden])) #access .institute-logo{width:100px;height:100px;margin-bottom:20px;border-radius:16px}body:has(#access:not([hidden])) #access .access-story h1{font-size:36px}body:has(#access:not([hidden])) #access .access-form{padding:28px 24px}.course-card .course-cover{height:220px}}
 @media(prefers-reduced-motion:reduce){.course-card{transition:none}.course-card:hover{transform:none}.loading-spinner{animation-duration:2.5s}}
-/* Carrusel institucional, exclusivamente dentro del campus autenticado. */
-.campus-slider{position:relative;overflow:hidden;border:1px solid #dce3eb;border-radius:14px;margin-bottom:24px;background:#fff;color:#041f48}
-.campus-slide{position:relative;isolation:isolate;display:flex;align-items:center;gap:26px;min-height:230px;padding:26px 7% 65px}
-.campus-slide-background{position:absolute;inset:0;z-index:-1;width:100%;height:100%;object-fit:cover}
-.campus-slide-logo{width:130px;height:130px;object-fit:contain;flex-shrink:0}
-.campus-slide>div{padding:12px;border-radius:12px;background:rgba(255,255,255,.94)}
-.campus-slide p{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:2px;color:#8a641f}
-.campus-slide h2{margin:0 0 8px;font-size:clamp(23px,3vw,34px);line-height:1.2;color:#041f48}
-.campus-slide span{font-size:14px;color:#52657e}
-.campus-slider-controls{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:4px 8px;border-radius:24px;background:#fff;box-shadow:0 2px 12px #041f4815;white-space:nowrap}
-.campus-slider-controls button{width:auto;min-width:36px;min-height:36px;padding:4px 12px;margin:0;border-radius:20px;font-size:16px}
-.campus-slider-controls span{font-size:12px}
-@media(max-width:700px){.campus-slide{gap:8px;padding:22px 12px 66px;min-height:210px}.campus-slide-logo{width:75px;height:75px}.campus-slide h2{font-size:22px}.campus-slide span{font-size:12px}.campus-slide p{font-size:9px;letter-spacing:1px}}
+/* Compact decorative banner. */
+#campus .campus-slider{position:relative;width:100%;height:100px;min-height:0;max-height:100px;overflow:hidden;margin:0 0 16px;padding:0;border:1px solid #dce5ef;border-radius:12px;box-sizing:border-box;background:#fff}
+#campus .campus-slider[hidden]{display:none}
+#campus .campus-slider .campus-banner-image{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:100%;max-height:100%;margin:0;object-fit:cover;object-position:center}
+@media(max-width:600px){#campus .campus-slider{height:70px;max-height:70px;margin-bottom:12px;border-radius:9px}}
 
 /* Mantiene la información dentro de una columna de lectura compacta. */
-#campus.campus-layout{width:100%;max-width:none;margin:0;grid-template-columns:240px minmax(0,1fr)}
-#campus .campus-content{width:calc(100% - 48px);max-width:none;justify-self:stretch;margin:24px;padding:0;box-sizing:border-box;background:transparent;border:0;border-radius:0}
+#campus.campus-layout{width:100%;max-width:none;margin:0;grid-template-columns:220px minmax(0,1fr)}
+#campus .campus-content{width:calc(100% - 40px);max-width:1080px;justify-self:center;margin:20px;padding:0;box-sizing:border-box;background:transparent;border:0;border-radius:0}
 #view{min-width:0;overflow-wrap:anywhere}
+.course-lifecycle{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px 20px;margin:16px 0;border:1px solid #dce5ef;border-left:4px solid #b78a37;border-radius:12px;background:#fff}
+.course-lifecycle p{font-size:13px;color:#52657e;margin:6px 0 0}
 #view .panel,#view .course-card,#view .stat,#view .learning-overview>*,#view .agenda-item>div{min-width:0;max-width:100%;box-sizing:border-box}
 #view .prose{max-width:76ch;line-height:1.65}
 #view .panel p{line-height:1.65}
 #view .panel{padding:20px;margin:14px 0}
 #view .section-heading{margin:20px 0 14px;flex-wrap:wrap}
 #view .task-top{flex-wrap:wrap}
-#view .task-top>div{min-width:0;flex:1 1 240px}
+#view .task-top>div{min-width:0;flex:1 1 220px}
 #view .task-top small{white-space:normal}
 #view .resource{max-width:100%;white-space:normal}
 #view .table-wrap{max-width:100%;overflow-x:auto}
@@ -315,14 +310,146 @@ body:has(#access:not([hidden])) #access .access-form{padding:48px;background:#ff
 #view .course-card .course-cover{height:160px}
 #view .course-body{padding:18px}
 #view .course-hero img{max-height:340px}
-#campus .campus-slider{background:#fff;border-color:#dce5f1;box-shadow:none}
-#campus .campus-slide{min-height:200px;padding:28px 8%;gap:28px;box-sizing:border-box;background:#fff}
-#campus .campus-slide-background{inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:1;mix-blend-mode:normal;background:#fff}
-#campus .campus-slide>div{background:rgba(255,255,255,.94);padding:12px 16px;border-radius:10px;min-width:0}
-#campus .campus-slide h2{font-size:clamp(23px,2.4vw,34px)}
-#campus .campus-slider-controls{position:static;transform:none;justify-content:center;gap:10px;padding:8px 12px;border-radius:0;border-top:1px solid #e5ebf4;box-shadow:none;background:#fff}
-#campus .campus-slide-logo{width:105px;height:105px}
 #campus .workspace-bar{margin-bottom:18px;gap:12px;flex-wrap:wrap}
 @media(max-width:1100px){#view .learning-overview{grid-template-columns:minmax(0,1fr);gap:16px}}
-@media(max-width:900px){#campus.campus-layout{grid-template-columns:minmax(0,1fr)}#campus .campus-content{width:calc(100% - 32px);margin:16px;padding:0}#campus .campus-slide{padding:22px 16px;gap:12px;min-height:175px}#campus .campus-slide>div{padding:10px}}
-@media(max-width:600px){#campus .campus-content{width:100%;margin:12px 0;padding:14px}#view .stats-grid{grid-template-columns:minmax(0,1fr)}#view .stat{display:flex;align-items:center;gap:14px;padding:12px 14px}#view .stat strong{font-size:24px;margin:0}#view .stat span{font-size:12px}#view .panel{padding:16px}#campus .campus-slide-logo{width:70px;height:70px}#campus .campus-slide{min-height:175px}#view .course-card .course-cover{height:140px}}
+@media(max-width:900px){#campus.campus-layout{grid-template-columns:minmax(0,1fr)}#campus .campus-content{width:calc(100% - 32px);margin:16px;padding:0}}
+@media(max-width:600px){#campus .campus-content{width:100%;margin:12px 0;padding:14px}#view .stats-grid{grid-template-columns:minmax(0,1fr)}#view .stat{display:flex;align-items:center;gap:14px;padding:12px 14px}#view .stat strong{font-size:24px;margin:0}#view .stat span{font-size:12px}#view .panel{padding:16px}#view .course-card .course-cover{height:140px}}
+
+/* Keep notices below fixed navigation and align them with the workspace. */
+body:has(#campus:not([hidden])) #notice{position:sticky;top:calc(var(--campus-header-height) + 8px);z-index:105;width:calc(100% - 260px);max-width:1080px;margin:12px max(20px,calc((100vw - 220px - 1080px)/2)) 0 auto;padding:12px 16px;box-sizing:border-box;overflow-wrap:anywhere;box-shadow:0 4px 18px #142d4e15}
+#campus .welcome-banner{padding:22px 24px;border-radius:14px}
+#campus .welcome-banner h1{font-size:26px;margin-bottom:8px}
+#campus .welcome-banner p{font-size:13px;max-width:64ch}
+#view .stats-grid{gap:12px;margin:16px 0 20px}
+#view .stat{padding:14px 16px;border-radius:12px}
+#view .stat strong{font-size:26px;margin-bottom:4px}
+#view .section-heading h2{font-size:21px}
+#view .course-grid{gap:16px}
+#view .course-body{padding:16px}
+#view .course-hero img{max-height:240px;object-fit:contain}
+@media(max-width:900px){
+ body:has(#campus:not([hidden])) #notice{top:calc(var(--campus-header-height) + var(--campus-menu-height) + 8px);width:calc(100% - 32px);margin:12px 16px 0}
+ #campus .campus-content{max-width:1080px}
+ .campus-sidebar{width:100%}
+}
+@media(max-width:600px){
+ body:has(#campus:not([hidden])) #notice{width:calc(100% - 24px);margin:10px 12px 0;max-height:30svh;overflow-y:auto}
+ #campus .welcome-banner{padding:18px}
+ #campus .welcome-banner h1{font-size:23px}
+}
+
+/* Desktop density: fit the campus at normal browser zoom. */
+@media(min-width:901px){
+ :root{--campus-header-height:64px}
+ .campus-top{padding:0 20px}
+ .campus-brand{font-size:26px;gap:9px}
+ .campus-brand img{width:40px;height:40px}
+ .campus-brand small{font-size:7px;margin-top:6px}
+ #account{font-size:12px;gap:12px}
+ #logout{min-height:34px;padding:7px 12px;font-size:12px}
+ .campus-sidebar{padding:18px 10px}
+ .campus-sidebar>.eyebrow{font-size:9px;margin-bottom:14px;padding-left:10px}
+ .campus-sidebar nav{display:flex;flex-direction:column;gap:4px}
+ .campus-sidebar nav button{min-height:36px;margin:0;padding:9px 10px;font-size:12px;line-height:1.3}
+ .campus-sidebar .bi{font-size:15px;margin-right:7px}
+ .sidebar-note{margin-top:24px;padding:14px;font-size:11px}
+ #campus .campus-content{margin:16px 20px}
+ #campus .workspace-bar{margin-bottom:12px;padding-bottom:10px}
+ #campus .workspace-bar button,#view button{min-height:34px;padding:8px 12px;font-size:12px}
+ #campus .campus-slider{height:76px;max-height:76px;margin-bottom:12px}
+ #campus .welcome-banner{padding:16px 20px;border-radius:12px}
+ #campus .welcome-banner .eyebrow{font-size:9px;margin-bottom:6px}
+ #campus .welcome-banner h1{font-size:23px;margin-bottom:6px}
+ #campus .welcome-banner p{font-size:12px;line-height:1.5;max-width:78ch}
+ #view .stats-grid{gap:10px;margin:12px 0 16px}
+ #view .stat{padding:10px 14px}
+ #view .stat strong{font-size:23px;margin-bottom:2px}
+ #view .stat span{font-size:11px}
+ #view .section-heading{margin:16px 0 10px}
+ #view .section-heading h2{font-size:19px}
+ #view .course-card{border-radius:12px}
+ #view .course-card .course-cover{height:110px}
+ #view .course-cover>.bi{font-size:30px}
+ #view .course-body{padding:14px}
+ #view .course-body h3{font-size:16px;line-height:1.3;margin:0 0 8px}
+ #view .course-body p{font-size:12px;line-height:1.5;min-height:0;margin:8px 0}
+ #view .course-body button{margin-top:8px}
+ #view .panel{padding:16px;margin:12px 0}
+ #view .panel h3{font-size:17px}
+ #view .learning-overview{gap:16px;margin:18px 0}
+ #view .agenda-item,#view .grade-preview-row{padding:12px 0;gap:12px}
+ #view .agenda-item h3{font-size:14px}
+}
+@media(min-width:1200px){#view .course-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
+
+/* Compact access form on desktop. */
+@media(min-width:901px){
+ body:has(#access:not([hidden])) #contenido{max-width:960px;padding:24px 20px 16px}
+ body:has(#access:not([hidden])) #access .access-story{min-height:470px;padding:28px}
+ body:has(#access:not([hidden])) #access .institute-logo{width:110px;height:110px;margin-bottom:18px}
+ body:has(#access:not([hidden])) #access .access-story h1{font-size:36px;margin:16px 0}
+ body:has(#access:not([hidden])) #access .access-story>p:not(.eyebrow){font-size:13px;line-height:1.6}
+ body:has(#access:not([hidden])) #access .access-form{padding:28px}
+ #access .access-identity{margin-bottom:18px}
+ #access .access-form h2{font-size:24px}
+ #access form label{margin-top:12px;font-size:12px}
+ #access form input{min-height:42px;font-size:14px;padding:10px 12px}
+ #access form button[type=submit]{min-height:42px;margin-top:16px}
+ #access .password-toggle{top:4px;min-height:34px}
+ #access .access-note{padding:12px;font-size:12px}
+}
+
+/* Notification bell and compact expandable records. */
+.notification-menu{position:relative;flex-shrink:0;color:#142d4e}
+.notification-menu>summary{position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;cursor:pointer;list-style:none;border:1px solid #ffffff40;border-radius:50%;color:#fff}
+.notification-menu>summary::-webkit-details-marker{display:none}
+.notification-menu>summary:focus-visible{outline:3px solid #ffbc2d;outline-offset:3px}
+#notificationCount{position:absolute;top:-5px;right:-6px;min-width:17px;padding:2px 4px;background:#ffbc2d;color:#142d4e;border-radius:12px;font-size:10px;font-weight:700;text-align:center}
+.notification-dropdown{position:absolute;right:0;top:calc(100% + 10px);width:min(350px,calc(100vw - 28px));max-height:min(420px,65svh);overflow-y:auto;padding:14px;background:white;border:1px solid #dce5ef;border-radius:12px;box-shadow:0 12px 36px #061d4830;font-size:12px;white-space:normal}
+.notification-item{padding:10px 0;border-bottom:1px solid #e7edf4}
+.notification-item>summary{cursor:pointer;font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.notification-item p{font-size:12px;line-height:1.6;margin:8px 0;overflow-wrap:anywhere}
+#account .notification-item .quiet{color:#142d4e;border-color:#dce5ef;font-size:11px;padding:6px 9px;min-height:30px}
+#account .notification-item .quiet:hover{background:#eef3f9}
+.student-record>summary{cursor:pointer;font-weight:700;font-size:15px;overflow-wrap:anywhere}
+.document-section{padding:12px;margin:10px 0;border:1px solid #dce5ef;border-radius:9px;background:#f8fafc}
+.document-section>summary{cursor:pointer;font-size:13px;font-weight:600}
+.document-section[open]>summary{margin-bottom:10px}
+@media(max-width:600px){.notification-dropdown{position:fixed;top:calc(var(--campus-header-height) + 4px);left:12px;right:12px;width:auto;max-height:60svh}}
+/* Menú móvil desplegable: todas las secciones al alcance del pulgar. */
+@media(max-width:900px){
+ :root{--campus-menu-height:58px}
+ #campus .campus-sidebar{height:auto;max-height:calc(100svh - var(--campus-header-height));padding:0 12px;overflow-y:auto;box-shadow:0 4px 12px #041f4820}
+ #campus .mobile-menu-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:var(--campus-menu-height);min-height:44px;padding:8px 4px;border:0;background:transparent;color:white;border-radius:0;font-size:14px;text-align:left}
+ .mobile-menu-toggle>span:first-child{display:flex;align-items:center;gap:8px;flex-shrink:0;font-weight:700}
+ #mobileMenuLabel{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:#e4c58b;font-size:12px}
+ #campus .mobile-menu-toggle .bi{margin:0}
+ #campus .campus-sidebar nav{display:none;height:auto;overflow:visible;flex-direction:column;align-items:stretch;gap:5px;padding:4px 0 14px}
+ #campus .campus-sidebar.menu-open nav{display:flex}
+ #campus .campus-sidebar nav button{flex:none;width:100%;min-height:46px;white-space:normal;padding:12px;font-size:13px;line-height:1.4;text-align:left;margin:0}
+ #campus .campus-sidebar.menu-open .bi-chevron-down{transform:rotate(180deg)}
+ .campus-top #account{gap:8px}
+ .campus-top #accountName{display:none}
+ .campus-top .campus-brand{font-size:25px;gap:7px}
+ .campus-top .campus-brand img{width:36px;height:40px}
+ .campus-top #logout{padding:8px;min-height:44px;font-size:12px}
+}
+.profile-avatar{display:block;width:96px;height:96px;object-fit:cover;border-radius:50%;border:3px solid #b78a37;background:#edf3f8;margin:0 0 16px}
+.profile-placeholder{display:grid;place-items:center;font-size:40px;color:#142d4e}
+#account .account-profile{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;padding:3px;border:0;border-radius:50%;background:transparent}
+#account .account-profile .profile-avatar{box-sizing:border-box;width:38px;height:38px;margin:0;border:2px solid #e4c58b;font-size:22px}
+#account .account-profile:hover{background:#ffffff20}
+#account .account-profile:focus-visible{outline:3px solid #ffbc2d;outline-offset:2px}
+@media(max-width:380px){.campus-top{padding-left:10px;padding-right:10px}.campus-top #account{gap:4px}.campus-top .campus-brand{font-size:21px;gap:4px}}
+.welcome-dialog{width:min(510px,calc(100% - 28px));padding:0;overflow:auto;border:0;border-radius:20px;box-shadow:0 24px 80px #041f4855}
+.welcome-brand{display:flex;align-items:center;gap:18px;padding:26px;background:linear-gradient(120deg,#041f48,#124678);border-bottom:4px solid #b78a37;color:#fff;font-size:12px;font-weight:700;letter-spacing:1.5px}
+.welcome-brand img{width:70px;height:70px;object-fit:contain;background:white;border-radius:14px;padding:4px}
+.welcome-body{padding:28px;color:#142d4e}
+.welcome-body .eyebrow{color:#8a6525;font-size:10px;margin-bottom:12px}
+.welcome-body h2{font-size:29px;line-height:1.2}
+#welcomeName{font-size:18px;font-weight:700;overflow-wrap:anywhere}
+#welcomeDescription{font-size:14px;color:#52647a}
+.welcome-tip{display:flex;gap:12px;align-items:center;background:#f2f5f8;padding:16px;border-radius:12px;font-size:13px;line-height:1.6;margin:22px 0}
+.welcome-tip .bi{font-size:25px;color:#b78a37}
+#welcomeContinue{width:100%;min-height:46px;background:#142d4e;color:white}
+@media(max-width:600px){.welcome-brand{padding:20px;gap:12px;font-size:10px}.welcome-body{padding:22px}.welcome-body h2{font-size:25px}}

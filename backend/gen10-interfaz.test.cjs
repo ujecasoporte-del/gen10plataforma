@@ -4,6 +4,26 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const html=fs.readFileSync(__dirname+'/../gen10.html','utf8');
 const script=fs.readFileSync(__dirname+'/../gen10.js','utf8');
+
+test('Curso culminado queda visible para consulta y oculta acciones de entrega',async()=>{
+  const data=state();data.cursos[0].estado='Culminado';
+  const c=client(service(data));await c.login();
+  await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'curso',id:'course-1'}})}});
+  assert.match(c.node('view').innerHTML,/Curso culminado/);
+  assert.doesNotMatch(c.node('view').innerHTML,/data-action="estado-curso"|data-action="completar"/);
+  await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'tab',id:'tareas'}})}});
+  assert.doesNotMatch(c.node('view').innerHTML,/data-action="entregar"/);
+});
+
+test('Docente cambia estado mediante confirmación y revisión del curso',async()=>{
+  const data=state('docente');data.cursos[0].revision=7;
+  const c=client(service(data));await c.login();
+  await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'curso',id:'course-1'}})}});
+  assert.match(c.node('view').innerHTML,/data-action="estado-curso"/);
+  await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'estado-curso',id:'course-1'}})}});
+  assert.match(c.node('editorFields').innerHTML,/Cerrado.*Culminado/s);
+  assert.doesNotMatch(c.node('editorFields').innerHTML,/<option value="Activo"/);
+});
 function client(fetch, remembered=new Map()) {
   const nodes={},requests=[],storage=new Map([['ifobeSesion','admin-existing']]);
   function node(id){return nodes[id]||={id,value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,dataset:{},listeners:{},attributes:{},
@@ -21,6 +41,7 @@ function client(fetch, remembered=new Map()) {
     fetch:async(url,options)=>{const payload=JSON.parse(options.body);requests.push(payload);return {ok:true,json:async()=>fetch(payload)}}
   });
   vm.runInContext(fs.readFileSync(__dirname+'/../gen10-archivos.js','utf8'),ctx);
+  vm.runInContext(fs.readFileSync(__dirname+'/../gen10-perfil.js','utf8'),ctx);
   vm.runInContext(script,ctx);
   const submit=id=>node(id).listeners.submit({preventDefault(){},target:node(id)});
   async function login(){node('loginEmail').value='student@example.com';node('loginPassword').value='Mi contraseña de prueba';await submit('loginForm');}
@@ -35,6 +56,19 @@ function state(rol='estudiante'){
     entregas:[{id:'submission',curso:'course-1',tarea:'task-1',email:'student@example.com',nota:0,contenido:'Respuesta',url:'',comentario:'Revisar'}]};
 }
 function service(snapshot=state()){return d=>d.accion==='gen10Estado'?snapshot:['gen10Login','gen10VerificarCodigo'].includes(d.accion)?{ok:true,portal:'gen10-v1',autenticacion:'password-v1',token:'campus-session'}:{ok:true,portal:'gen10-v1',mensaje:'Revisa tu correo'};}
+
+test('Bienvenida: aparece en cada inicio de sesión y no al actualizar el campus',async()=>{
+  const c=client(service());await c.login();
+  assert.equal(c.node('welcomeDialog').open,true);
+  c.node('welcomeContinue').listeners.click();
+  await c.node('refresh').listeners.click();
+  assert.equal(c.node('welcomeDialog').open,false);
+  await c.node('logout').listeners.click();
+  await c.login();
+  assert.equal(c.node('welcomeDialog').open,true);
+  await c.node('logout').listeners.click();
+  assert.equal(c.node('welcomeDialog').open,false);
+});
 
 test('Examen con límites inicia y guarda respuestas con su número de intento',async()=>{
   const snapshot=state();snapshot.evaluaciones='gen10-examenes-v1';snapshot.limitesExamen=true;
@@ -92,7 +126,8 @@ test('Gen10 interfaz: el ingreso diario usa correo y contraseña sin pedir códi
   const c=client(service());assert.equal(c.node('loginForm').hidden,false);assert.equal(c.node('requestCode').hidden,true);
   await c.login();assert.deepEqual(c.requests.map(r=>r.accion),['gen10Login','gen10Estado']);
   assert.equal(c.requests[0].password,'Mi contraseña de prueba');
-  assert.equal(c.node('loginPassword').value,'');assert.equal(c.storage.size,2);
+  assert.equal(c.node('loginPassword').value,'');assert.equal(c.storage.get('gen10Sesion'),'campus-session');
+  assert.equal(c.storage.get('gen10Bienvenida:student@example.com'),'1');
 });
 test('Gen10 interfaz: activación valida confirmación y envía código con contraseña',async()=>{
   const c=client(service());c.node('loginEmail').value='student@example.com';

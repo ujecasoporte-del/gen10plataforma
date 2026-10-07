@@ -8,18 +8,22 @@
   <link rel="icon" data-ifobe-imagen="icono">
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="gen10.css">
-  <link rel="stylesheet" href="gen10-institucional.css">
+  <link rel="stylesheet" href="gen10-institucional.css?v=perfil-cabecera-8">
   <script src="inscripcion-config.js" defer></script>
   <script src="gen10-archivos.js" defer></script>
+  <script src="vendor/jspdf.umd.min.js" defer></script>
+  <script src="gen10-pdf.js" defer></script>
+  <script src="gen10-perfil.js" defer></script>
   <script src="gen10.js" defer></script>
   <script src="gen10-slider.js" defer></script>
+<script src="gen10-menu.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   <header class="campus-top">
     <a class="campus-brand" href="gen10.html" aria-label="Gen10 IFOBE, inicio"><img data-ifobe-imagen="logo" alt=""><span>gen<span class="brand-ten">10</span><small>EL CAMPUS DE IFOBE</small></span></a>
     <span class="top-caption">Aprender. Compartir. Crecer.</span>
-    <div id="account" hidden><span id="accountName"></span><button id="logout" class="quiet" type="button">Salir <i class="bi bi-box-arrow-right" aria-hidden="true"></i></button></div>
+    <div id="account" hidden><span id="accountName"></span><details id="notifications" class="notification-menu"><summary aria-label="Notificaciones"><i class="bi bi-bell" aria-hidden="true"></i><span id="notificationCount" hidden></span></summary><div class="notification-dropdown"><strong>Mis avisos</strong><div id="notificationList"></div></div></details><button id="accountProfile" class="account-profile" type="button" data-view="perfil" aria-label="Abrir mi perfil" title="Mi perfil"><span class="profile-avatar profile-placeholder"><i class="bi bi-person" aria-hidden="true"></i></span></button><button id="logout" class="quiet" type="button">Salir <i class="bi bi-box-arrow-right" aria-hidden="true"></i></button></div>
   </header>
   <div id="notice" class="notice" role="status" aria-live="polite" tabindex="-1" hidden></div>
   <main id="contenido">
@@ -55,30 +59,14 @@
       </div>
     </section>
     <section id="campus" class="campus-layout" hidden aria-label="Mi campus">
-      <aside class="campus-sidebar"><p class="eyebrow">MI ESPACIO</p><nav aria-label="Campus"><button type="button" id="profileNav" data-view="perfil"><i class="bi bi-person" aria-hidden="true"></i> Datos y documentos</button><button type="button" data-view="inicio"><i class="bi bi-grid" aria-hidden="true"></i> Mi inicio</button><button type="button" data-view="cursos"><i class="bi bi-collection" aria-hidden="true"></i> Mis cursos</button><button type="button" data-view="tareas"><i class="bi bi-journal-check" aria-hidden="true"></i> Tareas</button><button type="button" data-view="examenes"><i class="bi bi-ui-checks" aria-hidden="true"></i> Exámenes</button><button type="button" data-view="seguimiento"><i class="bi bi-bar-chart" aria-hidden="true"></i> Notas y avance</button><button type="button" id="adminNav" data-view="administracion" hidden><i class="bi bi-people" aria-hidden="true"></i> Administración</button></nav><div class="sidebar-note"><i class="bi bi-lightbulb" aria-hidden="true"></i><p>Un paso a la vez.<br>Cada día, más cerca.</p></div></aside>
-      <div class="campus-content"><section class="campus-slider" aria-label="Imágenes del Instituto IFOBE" aria-roledescription="carrusel">
-  <div class="campus-slide" role="group" aria-label="1 de 2">
-    <img class="campus-slide-background" src="img/fondo2.png" alt="" width="2000" height="1414">
-    <img class="campus-slide-logo" data-ifobe-imagen="logo" alt="Escudo del Instituto IFOBE" width="500" height="500">
-    <div><p>INSTITUTO IFOBE</p><h2>Tu formación nos une.</h2><span>Bienvenido a nuestro campus Gen10</span></div>
-  </div>
-  <div class="campus-slide" role="group" aria-label="2 de 2" hidden>
-    <img class="campus-slide-background" src="img/fondo2.png" alt="" width="2000" height="1414" loading="lazy">
-    <img class="campus-slide-logo" data-ifobe-imagen="logo" alt="Escudo del Instituto IFOBE" width="500" height="500">
-    <div><p>GEN10 · IFOBE</p><h2>Aprender. Compartir. Crecer.</h2><span>Un espacio para construir tu futuro</span></div>
-  </div>
-  <div class="campus-slider-controls">
-    <button type="button" data-slider-prev aria-label="Imagen anterior">‹</button>
-    <span data-slider-count>1 / 2</span>
-    <button type="button" data-slider-next aria-label="Imagen siguiente">›</button>
-    <button type="button" data-slider-pause aria-pressed="false">Pausar</button>
-  </div>
-</section><div class="workspace-bar"><span id="breadcrumb">Mi inicio</span><button type="button" class="quiet" id="refresh"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Actualizar</button></div><div id="view"></div></div>
+      <aside class="campus-sidebar"><p class="eyebrow">MI ESPACIO</p><button type="button" id="mobileMenuToggle" class="mobile-menu-toggle" aria-expanded="false" aria-controls="campusNavigation"><span><i class="bi bi-list" aria-hidden="true"></i> Menú</span><span id="mobileMenuLabel">Mi inicio</span><i class="bi bi-chevron-down" aria-hidden="true"></i></button><nav id="campusNavigation" aria-label="Campus"><button type="button" id="profileNav" data-view="perfil"><i class="bi bi-person" aria-hidden="true"></i> Mi perfil</button><button type="button" id="studentDataNav" data-view="expediente" hidden><i class="bi bi-folder" aria-hidden="true"></i> Datos y documentos del alumno</button><button type="button" data-view="inicio"><i class="bi bi-grid" aria-hidden="true"></i> Mi inicio</button><button type="button" data-view="cursos"><i class="bi bi-collection" aria-hidden="true"></i> Mis cursos</button><button type="button" data-view="tareas"><i class="bi bi-journal-check" aria-hidden="true"></i> Tareas</button><button type="button" data-view="examenes"><i class="bi bi-ui-checks" aria-hidden="true"></i> Exámenes</button><button type="button" data-view="seguimiento"><i class="bi bi-bar-chart" aria-hidden="true"></i> Notas y avance</button><button type="button" id="adminNav" data-view="administracion" hidden><i class="bi bi-people" aria-hidden="true"></i> Administración</button></nav><div class="sidebar-note"><i class="bi bi-lightbulb" aria-hidden="true"></i><p>Un paso a la vez.<br>Cada día, más cerca.</p></div></aside>
+      <div class="campus-content"><div class="campus-slider" hidden aria-hidden="true"><img class="campus-banner-image" alt=""></div><div class="workspace-bar"><span id="breadcrumb">Mi inicio</span><button type="button" class="quiet" id="refresh"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Actualizar</button></div><div id="view"></div></div>
     </section>
   </main>
   <footer class="campus-footer"><span>Gen10 · Instituto IFOBE</span><span>Un espacio para construir tu futuro.</span></footer>
   <dialog id="editor" aria-labelledby="editorTitle"><div class="dialog-heading"><h2 id="editorTitle"></h2><button type="button" id="closeEditor" class="quiet" aria-label="Cerrar">✕</button></div><form id="editorForm"><div id="editorFields"></div><p id="editorError" class="form-error" role="alert" hidden></p><div class="dialog-actions"><button type="submit" id="saveEditor">Guardar</button></div></form></dialog>
   <dialog id="fileViewer" class="file-viewer" aria-labelledby="fileTitle"><div class="dialog-heading"><h2 id="fileTitle">Archivo</h2><button id="closeFile" class="quiet" type="button">Cerrar</button></div><div id="fileContent"></div><div class="dialog-actions"><a id="fileOpen" class="download-file" target="_blank" rel="noopener noreferrer" hidden>Abrir en otra pestaña</a><a id="fileDownload" class="download-file" download hidden>Descargar archivo</a></div></dialog>
   <dialog id="loadingDialog" class="loading-dialog" aria-labelledby="loadingTitle" aria-describedby="loadingMessage"><div class="loading-spinner" aria-hidden="true"></div><h2 id="loadingTitle">Un momento</h2><p id="loadingMessage" role="status" aria-live="polite">Preparando tu campus…</p><span>Gen10 · Instituto IFOBE</span></dialog>
+  <dialog id="welcomeDialog" class="welcome-dialog" aria-labelledby="welcomeTitle" aria-describedby="welcomeDescription"><div class="welcome-brand"><img src="img/Logogen10.png" alt="Instituto IFOBE"><span>GEN10 · INSTITUTO IFOBE</span></div><div class="welcome-body"><p class="eyebrow">TU FORMACIÓN CONTINÚA AQUÍ</p><h2 id="welcomeTitle">Bienvenido a tu campus</h2><p id="welcomeName"></p><p id="welcomeDescription">Un espacio para aprender, compartir y avanzar. Encuentra tus cursos, consulta tus actividades y sigue tus resultados desde el menú.</p><div class="welcome-tip"><i class="bi bi-person-circle" aria-hidden="true"></i><span>Hazlo tuyo: completa tus datos y añade tu foto en <strong>Mi perfil</strong>.</span></div><button type="button" id="welcomeContinue" autofocus>Comenzar <i class="bi bi-arrow-right" aria-hidden="true"></i></button></div></dialog>
 </body>
 </html>

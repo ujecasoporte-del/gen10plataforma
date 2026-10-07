@@ -4,6 +4,49 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const crypto=require('node:crypto');
 
+test('Cerrar y culminar curso conserva registros, exige permisos y bloquea actividades',()=>{
+  const s=fixture();
+  const u=s.c.g10Usuario_('student@example.com');
+  s.ok('gen10GuardarUsuario',{email:u.email,nombre:u.nombre,rol:u.rol,activo:true,cedula:'123456',revision:u.revision});
+  const submission=s.ok('gen10Entregar',{tarea:'task-1',contenido:'Trabajo final',revision:0},s.student).registro;
+  let c=s.ok('gen10Estado',{},s.teacher).cursos.find(c=>c.id==='course-1');
+  assert.equal(s.post('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Cerrado'},s.student).ok,false);
+  assert.equal(s.post('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Cerrado'},s.otherTeacher).ok,false);
+  c=s.ok('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Cerrado'},s.teacher).registro;
+  assert.equal(c.estado,'Cerrado');
+  assert.equal(s.post('gen10Entregar',{tarea:'task-1',contenido:'Cambiar',revision:submission.revision},s.student).ok,false);
+  assert.equal(s.post('gen10Completar',{leccion:'lesson-1'},s.student).ok,false);
+  assert.equal(s.post('gen10GuardarCurso',{...c,titulo:'Cambiar'},s.teacher).ok,false);
+  assert.equal(s.post('gen10EstadoCurso',{id:c.id,revision:1,estado:'Culminado'},s.teacher).ok,false);
+  assert.equal(s.post('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Culminado'},s.teacher).ok,false);
+  const grade=s.ok('gen10Calificar',{entrega:submission.id,nota:4,comentario:'Final',revision:submission.revision},s.teacher).registro;
+  c=s.ok('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Culminado'},s.teacher).registro;
+  assert.equal(s.ok('gen10Estado',{},s.student).cursos[0].estado,'Culminado');
+  assert.equal(s.post('gen10Calificar',{entrega:grade.id,nota:5,revision:grade.revision},s.teacher).ok,false);
+  assert.equal(s.post('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Cerrado'},s.teacher).ok,false);
+  assert.equal(s.sheets.Matriculas.rows[1][8],'Finalizada');
+  assert.equal(s.sheets.Matriculas.rows[1][15],'','Culminar no inventa una nota final');
+  const preserved=JSON.stringify(s.c.g10Lista_('Entregas'));
+  c=s.ok('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Activo'}).registro;
+  assert.equal(s.sheets.Matriculas.rows[1][8],'Activa');
+  assert.equal(JSON.stringify(s.c.g10Lista_('Entregas')),preserved);
+  assert.equal(c.historialEstado.length,3);
+  assert.equal(c.archivos.length,0);
+});
+
+test('Un examen en curso impide cerrar; el vencido no bloquea indefinidamente',()=>{
+  const s=fixture();
+  s.ok('gen10GuardarTarea',{id:'exam-close',curso:'course-1',titulo:'Examen',contenido:'Responde',tipo:'examen',publicado:true,revision:0,duracionMinutos:1,intentosPermitidos:1,preguntas:[{enunciado:'Pregunta',opciones:['A','B','C','D'],correcta:0}]},s.teacher);
+  s.ok('gen10IniciarExamen',{tarea:'exam-close'},s.student);
+  const c=s.ok('gen10Estado',{},s.teacher).cursos[0];
+  assert.equal(s.post('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Cerrado'},s.teacher).ok,false);
+  const NativeDate=Date,now=Date.now()+120000;
+  s.c.Date=class extends NativeDate {constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}};
+  s.ok('gen10EstadoCurso',{id:c.id,revision:c.revision,estado:'Cerrado'},s.teacher);
+  assert.equal(s.post('gen10IniciarExamen',{tarea:'exam-close'},s.student).ok,false);
+  assert.equal(s.post('gen10ResponderExamen',{tarea:'exam-close',numero:1,respuestas:[0]},s.student).ok,false);
+});
+
 test('perfil propio conserva acceso y protege documentos frente a docentes',()=>{
   const s=fixture();
   const u=s.c.g10Lista_('Usuarios').find(u=>u.email==='student@example.com');
@@ -11,7 +54,7 @@ test('perfil propio conserva acceso y protege documentos frente a docentes',()=>
   const saved=s.c.g10Lista_('Usuarios').find(u=>u.email===u.id&&u.email==='student@example.com');
   assert.equal(saved.rol,'estudiante');assert.equal(saved.nombre,'Nombre actualizado');
   const own=s.ok('gen10Estado',{},s.student);assert.equal(own.perfil.telefono,'3001234567');
-  const teacher=s.ok('gen10Estado',{},s.teacher);assert.equal(teacher.perfil,null);assert.equal(teacher.expedientes.length,0);
+  const teacher=s.ok('gen10Estado',{},s.teacher);assert.equal(teacher.perfil.email,'teacher@example.com');assert.equal(teacher.expediente,null);assert.equal(teacher.expedientes.length,0);
   assert.throws(()=>s.c.g10LeerArchivo_(s.c.g10Usuario_('teacher@example.com'),{tabla:'Usuarios',registro:saved.id,archivo:'inventado'}),/acceso/);
   assert.throws(()=>s.c.g10Mutar_(saved,{accion:'gen10GuardarPerfil',nombre:saved.nombre,cedula:'999999',revision:saved.revision}),/administración/);
 });
@@ -20,7 +63,7 @@ test('documentos del perfil permiten lectura propia y administrativa, rechazan a
   const s=fixture(),u=s.c.g10Usuario_('student@example.com'),base64=Buffer.from('%PDF-1.7\nIdentidad').toString('base64');
   const fields={nombre:u.nombre,cedula:'123456',revision:u.revision,archivos:[{nombre:'Identidad.pdf',categoria:'cedula',base64}]};
   s.ok('gen10GuardarPerfil',fields,s.student);
-  const p=s.ok('gen10Estado',{},s.student).perfil;
+  const p=s.ok('gen10Estado',{},s.student).expediente;
   assert.equal(p.archivos[0].categoria,'cedula');
   assert.equal(s.ok('gen10Estado',{},s.student).documentosRequeridos.length,3);
   assert.equal(s.post('gen10GuardarPerfil',{...fields,revision:p.revision,archivos:[{nombre:'otra.pdf',categoria:'inventada',base64}]},s.student).ok,false);
@@ -488,4 +531,35 @@ test('Porcentajes: el docente configura su curso y se conservan al editar',()=>{
   assert.equal(s.post('gen10GuardarCurso',{...saved,pesoTareas:50},s.student).ok,false);
   const fields={...saved};delete fields.pesoTareas;
   assert.equal(s.ok('gen10GuardarCurso',fields,s.teacher).registro.pesoTareas,70);
+});
+
+test('Foto de perfil se guarda solo en la cuenta propia, se conserva y se puede quitar',()=>{
+  const s=fixture(),u=s.c.g10Usuario_('teacher@example.com');
+  const photo='data:image/jpeg;base64,'+Buffer.from([255,216,255,224,0,16,255,217]).toString('base64');
+  const save=fields=>s.ok('gen10GuardarDatosUsuario',{nombre:u.nombre,revision:s.c.g10Usuario_(u.email).revision,...fields},s.teacher);
+  save({fotoPerfil:photo,email:'student@example.com'});
+  assert.equal(s.ok('gen10Estado',{},s.teacher).perfil.fotoPerfil,photo);
+  assert.equal(s.c.g10Usuario_('student@example.com').fotoPerfil,undefined);
+  assert.equal(s.c.g10Publico_(s.c.g10Usuario_(u.email)).fotoPerfil,undefined);
+  save({telefono:'3001234567'});
+  assert.equal(s.ok('gen10Estado',{},s.teacher).perfil.fotoPerfil,photo);
+  for(const value of ['data:image/svg+xml;base64,AAAA','data:image/jpeg;base64,AAAA','x'.repeat(30001)])assert.equal(s.post('gen10GuardarDatosUsuario',{nombre:u.nombre,revision:s.c.g10Usuario_(u.email).revision,fotoPerfil:value},s.teacher).ok,false);
+  save({fotoPerfil:''});
+  assert.equal(s.ok('gen10Estado',{},s.teacher).perfil.fotoPerfil,'');
+});
+
+test('Mi perfil usa la cuenta de sesion y conserva los expedientes ajenos',()=>{
+  const s=fixture();
+  const teacher=s.c.g10Usuario_('teacher@example.com');
+  const before=JSON.stringify(s.c.g10Usuario_('student@example.com'));
+  s.ok('gen10GuardarDatosUsuario',{nombre:'Docente actualizado',telefono:'3000000000',direccion:'Mi direccion',ciudad:'Mi ciudad',revision:teacher.revision,email:'student@example.com',id:'student@example.com',rol:'admin',archivos:[]},s.teacher);
+  const state=s.ok('gen10Estado',{},s.teacher);
+  assert.equal(state.perfil.email,teacher.email);
+  assert.equal(state.perfil.nombre,'Docente actualizado');
+  assert.equal(state.perfil.rol,'docente');
+  assert.equal(state.perfil.archivos,undefined);
+  assert.equal(state.expediente,null);
+  assert.equal(state.expedientes.length,0);
+  assert.equal(JSON.stringify(s.c.g10Usuario_('student@example.com')),before);
+  assert.equal(s.post('gen10GuardarDatosUsuario',{nombre:'Cambio viejo',revision:teacher.revision},s.teacher).ok,false);
 });
