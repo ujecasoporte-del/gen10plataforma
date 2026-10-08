@@ -4,11 +4,13 @@
 (() => {
   // CONFIGURACIÓN COMPARTIDA. Rutas relativas a la carpeta de este archivo.
   const opciones = {
-    apiUrl: 'https://script.google.com/macros/s/AKfycbzvi7DQ90_MiGAU_ArAM1DEQEemQmYmZMAddeT0hcu9hPBj4qyQeyZy7mYnL70KYa0ctA/exec',
+    // Activa el aviso en todas las páginas publicando este archivo con activo: true.
+    mantenimiento: {activo: false, mensaje: 'Estamos trabajando para brindarte una mejor experiencia. Gracias por tu paciencia.'},
+    apiUrl: 'https://script.google.com/macros/s/AKfycbygn1x0Z9CuxcdGJGEGljAvtDx62pLKu2DRXHO_Rh-Y87MANrIUcaAvu3RCh9s5HgsOyQ/exec',
     imagenes: {
       logo: 'img/Logogen10.png',
       icono: 'img/Logogen10.png',
-      fondoAcceso: 'img/login-study.jpg',
+      fondoAcceso: 'img/campus-universitario.png',
       // Banner decorativo de Gen10: coloca tu imagen en img/ y cambia esta ruta.
       // Recomendado: imagen horizontal (1600 ? 240 px). Usa '' para ocultarlo.
       bannerGen10: 'img/fondo2.png',
@@ -19,8 +21,13 @@
   const base = document.currentScript.src;
   const imagenes = Object.freeze(Object.fromEntries(Object.entries(opciones.imagenes)
     .map(([nombre, ruta]) => [nombre, ruta ? new URL(ruta, base).href : ''])));
-  window.IFOBE_CONFIG = Object.freeze({apiUrl: opciones.apiUrl, imagenes});
+  const mantenimiento = Object.freeze({...opciones.mantenimiento});
+  window.IFOBE_CONFIG = Object.freeze({apiUrl: opciones.apiUrl, imagenes, mantenimiento});
   window.IFOBE_INSCRIPCION = window.IFOBE_CONFIG;
+  const avisoUrl = new URL('mantenimiento.html', base);
+  if (mantenimiento.activo && window.location.pathname !== avisoUrl.pathname) {
+    window.location.replace(avisoUrl.href);
+  }
   document.documentElement.style.setProperty('--ifobe-logo', `url(${JSON.stringify(imagenes.logo)})`);
   document.documentElement.style.setProperty('--ifobe-fondo-acceso', `url(${JSON.stringify(imagenes.fondoAcceso)})`);
   function aplicarImagenes() {

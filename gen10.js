@@ -182,7 +182,9 @@
     return `${button('← Mis cursos','vista-cursos')}<div class="section-heading"><h2>${esc(c.titulo)}</h2>${!student()?button('Editar curso','editar-curso',c.id):''}</div>${lifecycle}<div class="course-hero">${files.cover(c)}</div><p class="prose muted">${esc(c.descripcion)}</p>${files.render(c.archivos,"Cursos",c.id)}${student()?progressBar(progress(c.id)):badge(c.publicado?'Publicado':'Borrador',c.publicado?'':'draft')}<div class="tabs" role="group" aria-label="Secciones del curso">${tabs.map(([key,label])=>`<button type="button" data-action="tab" data-id="${key}" aria-pressed="${courseTab===key}">${label}</button>`).join('')}</div>${body}`;
   }
   function renderAdmin() {
-    return `${heading('Administración del campus',button('Habilitar usuario','usuario','',false))}<p class="staff-note">Habilita primero a docentes y estudiantes. Luego crea cursos, asigna un docente y agrega estudiantes al grupo. Las solicitudes públicas de inscripción no conceden acceso automáticamente.</p><div class="panel table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody>${data.usuarios.map(u=>`<tr><td>${esc(u.nombre)}</td><td>${esc(u.email)}</td><td>${esc(roles[u.rol])}</td><td>${u.activo?'Activo':'Inactivo'}</td><td>${button('Editar','usuario',u.id)}</td></tr>`).join('')}</tbody></table></div>${heading('Cursos',button('Crear curso','editar-curso','',false))}${data.cursos.length?`<div class="course-grid">${data.cursos.map(courseCard).join('')}</div>`:empty('Crea un curso y asígnalo a un docente activo.')}`;
+    if(!admin())return empty('Esta sección está disponible solo para administración.');
+    const syncPanel=`<section class="panel"><h2>Sincronización académica</h2><p>Vincula estudiantes, matrículas, cursos publicados y notas de Gen10 con la gestión académica del instituto.</p>${button('Sincronizar plataformas','sincronizar-plataformas','',false)}<p class="hint">Los registros con datos incompletos se muestran como pendientes. Las notas de los siete módulos conservan su registro independiente.</p></section>`;
+    return `${heading('Administración del campus',button('Habilitar usuario','usuario','',false))}${syncPanel}<p class="staff-note">Habilita a docentes y estudiantes, crea cursos y asigna sus grupos. También puedes crear un estudiante desde el curso y enviar sus credenciales por correo.</p>${heading('Configuración de roles y contraseñas')}<p class="hint">Solo administración puede cambiar roles y establecer contraseñas. Las contraseñas actuales no se muestran.</p><div class="panel table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Contraseña</th><th>Acciones</th></tr></thead><tbody>${data.usuarios.map(u=>`<tr><td>${esc(u.nombre)}</td><td>${esc(u.email)}</td><td>${esc(roles[u.rol])}</td><td>${u.activo?'Activo':'Inactivo'}</td><td>${u.tienePassword?'Configurada':'Sin configurar'}</td><td>${button('Editar rol y acceso','usuario',u.id)}${u.email!==data.usuario.email?button('Configurar contraseña','password-usuario',u.id):'<span class="hint">Recupera tu contraseña desde el acceso.</span>'}</td></tr>`).join('')}</tbody></table></div>${heading('Cursos',button('Crear curso','editar-curso','',false))}${data.cursos.length?`<div class="course-grid">${data.cursos.map(courseCard).join('')}</div>`:empty('Crea un curso y asígnalo a un docente activo.')}`;
   }
   function render() {
     if (!data) return;
@@ -213,9 +215,22 @@
   function openEditor(title,html,save) { editorBeforeSubmit=null;editorSubmitLabel='Guardar';$('saveEditor').textContent=editorSubmitLabel;$('editorTitle').textContent=title; $('editorFields').innerHTML=html; $('editorError').hidden=true; editorSave=save; $('editor').showModal(); }
   function localDate(iso) { if(!iso)return ''; const d=new Date(iso);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); }
   function editUser(id) {
+    if(!admin())throw Error('Solo administración puede configurar roles y accesos.');
     const u=data.usuarios.find(r=>r.id===id);
     openEditor(u?'Editar acceso':'Habilitar usuario',field('Nombre','nombre',u?.nombre)+field('Correo','email',u?.email,'email',true,150)+field('Documento del estudiante','cedula',u?.cedula,'text',false,40)+select('Rol','rol',Object.entries(roles),u?.rol||'estudiante')+check('Acceso activo','activo',u?u.activo:true),f=>api('gen10GuardarUsuario',{cedula:f.cedula,nombre:f.nombre,email:u?.email||f.email,rol:f.rol,activo:f.activo==='on',revision:u?.revision||0}));
     if(u)$('edit-email').readOnly=true;
+  }
+  function campusUrl() {return window.location?new URL('gen10.html',window.location.href).href:'';}
+  function editPassword(id) {
+    if(!admin())throw Error('Solo administración puede configurar contraseñas.');
+    const u=data.usuarios.find(r=>r.id===id);
+    if(!u)throw Error('Usuario no disponible.');
+    openEditor('Configurar contraseña',`<p><strong>${esc(u.nombre)}</strong> · ${esc(u.email)}</p><p class="hint">Establece una contraseña de 12 a 128 caracteres. El cambio cierra las sesiones anteriores de esta cuenta.</p>`+field('Nueva contraseña','password','','password',true,128)+field('Confirmar contraseña','confirmPassword','','password',true,128)+check('Enviar credenciales e instrucciones por correo','enviarCorreo',true),async f=>{
+      if(f.password.length<12)throw Error('La contraseña debe tener entre 12 y 128 caracteres.');
+      if(f.password!==f.confirmPassword)throw Error('Las contraseñas no coinciden.');
+      const result=await api('gen10ConfigurarPassword',{email:u.email,password:f.password,enviarCorreo:f.enviarCorreo==='on',campusUrl:campusUrl(),revision:u.revision});
+      $('editorFields').replaceChildren();return result;
+    });
   }
   function renderNotices() {
     const notices=(data.notificaciones||[]).filter(n=>n.email===data.usuario.email);
@@ -282,9 +297,9 @@
   }
   function editEnrollment(id) {
     const member=data.inscritos.find(e=>e.id===id);
-    openEditor('Acceso al curso',field('Correo del estudiante','email',member?.email,'email',true,150)+check('Estudiante activo en este curso','activo',member?member.activo:true),f=>{
+    openEditor('Acceso al curso',field('Correo del estudiante','email',member?.email,'email',true,150)+(admin()&&!member?check('Crear estudiante nuevo y enviar sus credenciales','crearEstudiante',false)+field('Nombre del nuevo estudiante','nombre','','text',false,120)+field('Documento del nuevo estudiante','cedula','','text',false,40)+'<p class="hint">Marca Crear estudiante solo si el correo aún no tiene cuenta. Se genera una contraseña y se envía junto con las instrucciones del curso. Para una cuenta existente, conserva su contraseña y recibe un aviso de inscripción.</p>':'')+check('Estudiante activo en este curso','activo',member?member.activo:true),f=>{
       const existing=data.inscritos.find(e=>e.curso===courseId && e.email===f.email.trim().toLowerCase());
-      return api('gen10Inscribir',{curso:courseId,email:f.email,activo:f.activo==='on',revision:existing?.revision||0});
+      return api('gen10Inscribir',{curso:courseId,email:f.email,activo:f.activo==='on',revision:existing?.revision||0,...(admin()&&f.crearEstudiante==='on'?{crearEstudiante:true,nombre:f.nombre,cedula:f.cedula,campusUrl:campusUrl()}: {})});
     });
     if(member)$('edit-email').readOnly=true;
   }
@@ -383,6 +398,17 @@
       else if(['vista-tareas','vista-examenes','vista-seguimiento'].includes(action)){view=action.slice(6);render();}
       else if(action==='tab'){courseTab=id;render();}
       else if(action==='usuario')editUser(id);
+      else if(action==='password-usuario')editPassword(id);
+      else if(action==='sincronizar-plataformas'){
+        if(!admin())throw Error('Solo administración puede sincronizar las plataformas.');
+        b.disabled=true;
+        try{
+          const result=await api('gen10Sincronizar');
+          await refresh();
+          const s=result.sincronizacion;
+          notice(`Sincronización completada: ${s.creadas} matrículas creadas, ${s.actualizadas} registros actualizados. ${s.pendientes.length?'Pendientes: '+s.pendientes.join(' | '):'Sin pendientes.'}`);
+        }finally{b.disabled=false;}
+      }
       else if(action==='editar-perfil')editProfile();
       else if(action==='editar-datos-usuario')editUserProfile();
       else if(action==='editar-curso')editCourse(id);
@@ -411,7 +437,7 @@
     }catch(error){$('editorError').textContent=error.message;$('editorError').hidden=false;}
     finally{saving=false;$('saveEditor').disabled=false;$('saveEditor').textContent=editorSubmitLabel;$('closeEditor').disabled=false;controls.forEach(c=>c.disabled=false);}
   });
-  $('editor').addEventListener('close',()=>{clearTimeout(examTimer);examTimer=null;$('editorFields').onchange=null;});
+  $('editor').addEventListener('close',()=>{clearTimeout(examTimer);examTimer=null;$('editorFields').onchange=null;['edit-password','edit-confirmPassword'].forEach(id=>{const input=$(id);if(input)input.value='';});});
   $('closeEditor').addEventListener('click',()=>$('editor').close());
   $('editor').addEventListener('cancel',event=>{if(saving)event.preventDefault();});
   function authScreen(screen) {

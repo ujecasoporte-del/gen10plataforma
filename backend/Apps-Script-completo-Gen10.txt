@@ -5,6 +5,7 @@
 // Ejecuta configurarTodaLaPlataforma. Prepara las hojas y carpetas sin borrar registros ni enviar correos.
 // Administrador del campus por defecto: institutoifobe@gmail.com.
 // Para otro administrador, configura GEN10_ADMIN_EMAIL en Propiedades del script.
+// Opcional: GEN10_CAMPUS_URL fija el enlace público HTTPS de gen10.html en los correos de credenciales.
 // Después publica una nueva versión de la implementación existente.
 // Todas las páginas usan el enlace /exec de inscripcion-config.js: cámbialo solo allí si es nuevo.
 
@@ -675,6 +676,13 @@ function g10SincronizarAcademico_(){
   const alumnos=hojaAlumnosCompleta_(),matriculas=getHoja('Matriculas',COLUMNAS_MATRICULAS_);
   const usuarios=g10Lista_('Usuarios'),cursos=g10Lista_('Cursos'),tareas=g10Lista_('Tareas'),entregas=g10Lista_('Entregas');
   const resultado={creadas:0,actualizadas:0,pendientes:[]};
+  // Comparte la oferta con inscripciones y certificaciones sin reactivar programas deshabilitados.
+  const catalogo=getHoja('Programas',['Programa','Activo']);
+  const conocidos=catalogo.getDataRange().getDisplayValues().slice(1).map(function(r){return convertirTexto(r[0]).trim();});
+  cursos.filter(function(c){return c.publicado;}).forEach(function(c){
+    const titulo=convertirTexto(c.titulo).trim();
+    if(titulo&&conocidos.indexOf(titulo)<0){catalogo.appendRow([textoHoja_(titulo),'SI']);conocidos.push(titulo);resultado.actualizadas++;}
+  });
   g10Lista_('Inscritos').filter(function(e){return e.activo;}).forEach(function(inscrito){
     const usuario=usuarios.find(function(u){return u.email===inscrito.email&&u.activo&&u.rol==='estudiante';});
     const curso=cursos.find(function(c){return c.id===inscrito.curso;});if(!usuario||!curso)return;
@@ -878,7 +886,7 @@ function g10Usuario_(email) {
 }
 function g10Publico_(user) {
   return {id:user.id, email:user.email, nombre:user.nombre, rol:user.rol, activo:user.activo,
-    cedula:user.cedula||'', revision:user.revision, creada:user.creada, actualizada:user.actualizada};
+    cedula:user.cedula||'', tienePassword:!!user.credencial, revision:user.revision, creada:user.creada, actualizada:user.actualizada};
 }
 function g10Password_(password) {
   if (typeof password !== 'string' || password.length < 12 || password.length > 128) throw Error('La contraseña debe tener entre 12 y 128 caracteres.');
@@ -886,6 +894,34 @@ function g10Password_(password) {
 }
 function g10Derivar_(password, salt) {
   return sjcl.codec.hex.fromBits(sjcl.misc.pbkdf2(password, salt, 600000, 256));
+}
+function g10CredencialAdmin_(password) {
+  const salt=Utilities.getUuid()+Utilities.getUuid();
+  return {algoritmo:'pbkdf2-sha256',iteraciones:600000,salt:salt,hash:g10Derivar_(g10Password_(password),salt)};
+}
+function g10CampusUrl_(d) {
+  const url=PropertiesService.getScriptProperties().getProperty('GEN10_CAMPUS_URL')||d.campusUrl||'';
+  if(!/^https:\/\/[^\s<>"']+\/gen10\.html(?:[?#][^\s<>"']*)?$/.test(url))throw Error('Configura GEN10_CAMPUS_URL con el enlace público HTTPS de gen10.html.');
+  return url;
+}
+function g10CorreoCredenciales_(user,password,url,curso) {
+  // La contraseña solo existe durante esta petición; nunca se guarda en avisos ni registros.
+  let aviso,started=false;
+  try {
+    aviso=g10Guardar_('Notificaciones',{id:'credenciales:'+user.credencial.salt,email:user.email,curso:curso?curso.id:'',titulo:'Credenciales de acceso',mensaje:'Administración preparó tu acceso. Revisa tu correo para consultar las credenciales e instrucciones.',leida:false,correoEstado:'No enviado'},0);
+    if(MailApp.getRemainingDailyQuota()<1)throw Error('Cuota de correo agotada');
+    const details=[['Correo de acceso',user.email],['Contraseña',password],['Campus',url]];
+    if(curso)details.unshift(['Curso',curso.titulo]);
+    const mail=mensajeAcademico_(user.email,'Tu acceso a Gen10 está listo','Hola, '+user.nombre+'. Administración ha preparado tu acceso al campus.',details,'Abre el enlace del campus e ingresa con tu correo y contraseña. Completa Mi perfil y, en Mis cursos, revisa las lecciones, tareas, exámenes y fechas de entrega. Consulta tus calificaciones en Notas y avance. Conserva tus credenciales en privado. Para cambiar la contraseña, utiliza Olvidé mi contraseña en la pantalla de acceso. Si necesitas ayuda, responde a este correo.');
+    mail.name='Campus Gen10 · IFOBE';mail.subject='Gen10 | Credenciales e instrucciones de acceso';
+    aviso=g10Guardar_('Notificaciones',Object.assign({},aviso,{correoEstado:'Enviando'}),aviso.revision);started=true;
+    MailApp.sendEmail(mail);
+    g10Guardar_('Notificaciones',Object.assign({},aviso,{correoEstado:'Enviado'}),aviso.revision);
+    return 'Guardado. Se enviaron las credenciales e instrucciones al correo del usuario.';
+  }catch(error){
+    try{if(aviso)g10Guardar_('Notificaciones',Object.assign({},aviso,{correoEstado:started?'Por verificar':'No enviado',correoDetalle:started?'Revisar la entrega del correo antes de generar nuevas credenciales.':'No fue posible enviar el correo; establece una nueva contraseña y vuelve a enviarlo.'}),aviso.revision);}catch(ignore){}
+    return 'Acceso guardado; el correo de credenciales requiere revisión. No se reenvía automáticamente para evitar duplicados. Administración puede establecer una nueva contraseña y enviar otro correo.';
+  }
 }
 function g10NuevaSesion_(user) {
   const token = Utilities.getUuid() + Utilities.getUuid();
@@ -1081,6 +1117,17 @@ function g10Mutar_(user, d) {
     if(cedula&&!/^[a-zA-Z0-9-]{3,40}$/.test(cedula))throw Error('Revisa el documento del estudiante.');
     return g10Publico_(g10Guardar_('Usuarios', Object.assign({}, existing || {}, {id: email, email: email, cedula:cedula, nombre: g10Texto_(d.nombre, 120, true), rol: rol, activo: d.activo}), g10Revision_(d)));
   }
+  if(action==='gen10ConfigurarPassword') {
+    if(user.rol!=='admin')throw Error('Solo administración puede configurar contraseñas.');
+    const target=g10Lista_('Usuarios').find(function(u){return u.email===g10Email_(d.email);});
+    if(!target)throw Error('Usuario no disponible.');
+    if(target.email===user.email)throw Error('Para tu propia contraseña utiliza Olvidé mi contraseña al salir del campus.');
+    const password=g10Password_(d.password),url=d.enviarCorreo===true?g10CampusUrl_(d):'';
+    if(d.enviarCorreo===true&&!target.activo)throw Error('Activa el acceso antes de enviar credenciales.');
+    const saved=g10Guardar_('Usuarios',Object.assign({},target,{credencial:g10CredencialAdmin_(password)}),g10Revision_(d));
+    CacheService.getScriptCache().remove('gen10:codigo:'+g10Hash_(target.email));
+    return Object.assign(g10Publico_(saved),{avisoMensaje:d.enviarCorreo===true?g10CorreoCredenciales_(saved,password,url):'Contraseña actualizada. Las sesiones anteriores del usuario vencerán.'});
+  }
   if (action === 'gen10GuardarCurso') {
     const id = g10Id_(d), existing = g10Lista_('Cursos').find(function(c) { return c.id === id; });
     if (user.rol !== 'admin') {
@@ -1097,6 +1144,19 @@ function g10Mutar_(user, d) {
   if (['gen10Inscribir', 'gen10GuardarLeccion', 'gen10GuardarTarea'].indexOf(action) >= 0) {
     g10Curso_(user, d.curso, true);
     if (action === 'gen10Inscribir') {
+      if(d.crearEstudiante===true) {
+        if(user.rol!=='admin')throw Error('Solo administración puede crear estudiantes y sus credenciales.');
+        if(d.activo!==true||g10Revision_(d)!==0)throw Error('La creación requiere una inscripción nueva y activa.');
+        const email=g10Email_(d.email),exists=g10Lista_('Usuarios').some(function(u){return u.email===email;});
+        if(exists)throw Error('Este correo ya tiene una cuenta. Desmarca Crear estudiante para asignarla al curso.');
+        const url=g10CampusUrl_(d),nombre=g10Texto_(d.nombre,120,true),cedula=g10Texto_(d.cedula||'',40,false);
+        if(cedula&&!/^[a-zA-Z0-9-]{3,40}$/.test(cedula))throw Error('Revisa el documento del estudiante.');
+        if(g10Lista_('Inscritos').some(function(m){return m.id===d.curso+':'+email;}))throw Error('La inscripción ya existe. Actualiza el portal.');
+        const password='G10-'+Utilities.getUuid().replace(/-/g,'');
+        const created=g10Guardar_('Usuarios',{id:email,email:email,nombre:nombre,cedula:cedula,rol:'estudiante',activo:true,credencial:g10CredencialAdmin_(password)},0);
+        const enrolled=g10Guardar_('Inscritos',{id:d.curso+':'+email,curso:d.curso,email:email,activo:true},0);
+        return Object.assign(enrolled,{avisoMensaje:g10CorreoCredenciales_(created,password,url,g10Lista_('Cursos').find(function(c){return c.id===d.curso;}))});
+      }
       const student = g10Usuario_(g10Email_(d.email));
       if (student.rol !== 'estudiante' || typeof d.activo !== 'boolean') throw Error('Selecciona un estudiante activo.');
       return g10Guardar_('Inscritos', {id: d.curso + ':' + student.email, curso: d.curso, email: student.email, activo: d.activo}, g10Revision_(d));
@@ -1222,6 +1282,10 @@ function gen10Api_(d) {
       const user = g10Sesion_(d.token);
       if (d.accion === 'gen10Salir') { CacheService.getScriptCache().remove('gen10:sesion:' + d.token); data = {}; }
       else if (d.accion === 'gen10Estado') data = g10Estado_(user);
+      else if (d.accion === 'gen10Sincronizar') {
+        if(user.rol!=='admin')throw Error('Solo administración puede sincronizar las plataformas.');
+        data = {sincronizacion:g10SincronizarAcademico_()};
+      }
       else if (d.accion === 'gen10LeerArchivo') data = g10LeerArchivo_(user, d);
       else if(d.accion==='gen10LeerNotificacion') {
         const n=g10Lista_('Notificaciones').find(function(n){return n.id===d.id&&n.email===user.email;});
@@ -1234,8 +1298,9 @@ function gen10Api_(d) {
         const old=table?g10Lista_(table).find(function(r){return r.id===id;}):null;
         const saved=g10Mutar_(user,d);
         data={registro:saved};
+        if(saved.avisoMensaje)data.avisoMensaje=saved.avisoMensaje;
         if(['Cursos','Inscritos','Entregas','Tareas'].indexOf(table)>=0||d.accion==='gen10GuardarUsuario')try{data.sincronizacion=g10SincronizarAcademico_();}catch(error){data.avisoMensaje='Guardado. Sincronización académica pendiente: '+String(error.message||error);}
-        if(table)try{g10AvisarCambio_(table,saved,old);}catch(error){data.avisoMensaje='El cambio se guardó, pero no se pudieron completar los avisos. Contacta a administración.';}
+        if(table&&!(d.accion==='gen10Inscribir'&&d.crearEstudiante===true))try{g10AvisarCambio_(table,saved,old);}catch(error){data.avisoMensaje='El cambio se guardó, pero no se pudieron completar los avisos. Contacta a administración.';}
       }
 
     }
@@ -1338,7 +1403,7 @@ function g10AvisarCambio_(table,item,old,recuperar) {
   let titulo,mensaje,recipients;
   if(table==='Inscritos'){
     titulo=item.activo?'Inscripción en un curso':'Cambio de inscripción';
-    mensaje=item.activo?'Se habilitó tu inscripción en '+curso.titulo+'.':'Tu inscripción en '+curso.titulo+' fue desactivada.';
+    mensaje=item.activo?'Se habilitó tu inscripción en '+curso.titulo+'. Ingresa con tu correo y la contraseña de tu cuenta. Si es tu primer ingreso y aún no tienes contraseña, elige Activar cuenta; si la olvidaste, elige Olvidé mi contraseña. En Mis cursos encontrarás lecciones, tareas, exámenes y fechas de entrega; consulta tus resultados en Notas y avance.':'Tu inscripción en '+curso.titulo+' fue desactivada.';
     recipients=[item.email];
   }else if(table==='Entregas'){
     const tarea=g10Lista_('Tareas').find(function(t){return t.id===item.tarea;});

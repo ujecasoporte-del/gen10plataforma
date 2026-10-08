@@ -9,6 +9,7 @@ const header = `// IFOBE + GEN10 — CÓDIGO COMPLETO PARA GOOGLE APPS SCRIPT
 // Ejecuta configurarTodaLaPlataforma. Prepara las hojas y carpetas sin borrar registros ni enviar correos.
 // Administrador del campus por defecto: institutoifobe@gmail.com.
 // Para otro administrador, configura GEN10_ADMIN_EMAIL en Propiedades del script.
+// Opcional: GEN10_CAMPUS_URL fija el enlace público HTTPS de gen10.html en los correos de credenciales.
 // Después publica una nueva versión de la implementación existente.
 // Todas las páginas usan el enlace /exec de inscripcion-config.js: cámbialo solo allí si es nuevo.
 

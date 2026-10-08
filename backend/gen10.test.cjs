@@ -4,6 +4,23 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const crypto=require('node:crypto');
 
+test('Sincronización manual es exclusiva de administración y comparte programas sin reactivar los deshabilitados',()=>{
+  const s=fixture();
+  assert.equal(s.post('gen10Sincronizar',{},s.teacher).ok,false);
+  assert.equal(s.post('gen10Sincronizar',{},s.student).ok,false);
+  const catalogo=s.c.getHoja('Programas',['Programa','Activo']);
+  const titulo=s.c.g10Lista_('Cursos').find(c=>c.id==='course-1').titulo;
+  const fila=catalogo.rows.find(r=>r[0]===titulo);
+  assert.ok(fila,'El curso publicado forma parte de la oferta compartida');
+  fila[1]='NO';
+  const first=s.ok('gen10Sincronizar').sincronizacion;
+  assert.ok(Array.isArray(first.pendientes));
+  assert.equal(catalogo.rows.find(r=>r[0]===titulo)[1],'NO');
+  const snapshot=JSON.stringify(catalogo.rows);
+  s.ok('gen10Sincronizar');
+  assert.equal(JSON.stringify(catalogo.rows),snapshot);
+});
+
 test('Cerrar y culminar curso conserva registros, exige permisos y bloquea actividades',()=>{
   const s=fixture();
   const u=s.c.g10Usuario_('student@example.com');
@@ -199,6 +216,47 @@ function fixture(){
   s.mails.length=0;
   return s;
 }
+
+test('Administración configura contraseñas, invalida sesiones y protege credenciales',()=>{
+  const s=fixture(),u=s.c.g10Usuario_('student@example.com');
+  const fields={email:u.email,password:'Una clave nueva 2026',revision:u.revision};
+  assert.equal(s.post('gen10ConfigurarPassword',fields,s.teacher).ok,false);
+  assert.equal(s.post('gen10ConfigurarPassword',fields,s.student).ok,false);
+  assert.equal(s.post('gen10ConfigurarPassword',{...fields,password:'corta'}).ok,false);
+  s.cache.set('gen10:codigo:'+s.c.g10Hash_(u.email),{value:'old',expires:Date.now()+10000});
+  const result=s.ok('gen10ConfigurarPassword',fields);
+  assert.equal(result.registro.tienePassword,true);
+  assert.equal(JSON.stringify(result).includes(fields.password),false);
+  assert.equal(s.cache.has('gen10:codigo:'+s.c.g10Hash_(u.email)),false);
+  assert.equal(s.post('gen10Estado',{},s.student).ok,false);
+  assert.equal(s.ok('gen10Login',{email:u.email,password:fields.password}).autenticacion,'password-v1');
+});
+
+test('Nuevo estudiante del curso recibe credenciales sin guardar ni exponer la contraseña',()=>{
+  const s=fixture();s.props.GEN10_CAMPUS_URL='https://campus.example/gen10.html';
+  const fields={curso:'course-1',email:'nuevo@example.com',nombre:'Nuevo alumno',cedula:'987654',activo:true,revision:0,crearEstudiante:true};
+  assert.equal(s.post('gen10Inscribir',fields,s.teacher).ok,false);
+  assert.equal(s.c.g10Lista_('Usuarios').some(u=>u.email===fields.email),false);
+  const result=s.ok('gen10Inscribir',fields);
+  const mail=s.mails.find(m=>m.subject==='Gen10 | Credenciales e instrucciones de acceso');
+  assert.ok(mail);assert.equal(mail.to,fields.email);
+  assert.match(mail.body,/Curso uno/);assert.match(mail.body,/https:\/\/campus.example\/gen10.html/);
+  assert.match(mail.body,/Mis cursos/);
+  const password=mail.body.match(/Contraseña: (G10-[a-f0-9]+)/)[1];
+  assert.equal(JSON.stringify(s.sheets).includes(password),false);
+  assert.equal(JSON.stringify(result).includes(password),false);
+  assert.equal(s.ok('gen10Login',{email:fields.email,password}).autenticacion,'password-v1');
+  const count=s.mails.length;assert.equal(s.post('gen10Inscribir',fields).ok,false);assert.equal(s.mails.length,count);
+});
+
+test('Correo de credenciales fallido conserva acceso y registra revisión sin reenvío automático',()=>{
+  const s=fixture();s.props.GEN10_CAMPUS_URL='https://campus.example/gen10.html';
+  const u=s.c.g10Usuario_('student@example.com');s.c.MailApp.getRemainingDailyQuota=()=>0;
+  const result=s.ok('gen10ConfigurarPassword',{email:u.email,password:'Contraseña nueva 2026',enviarCorreo:true,revision:u.revision});
+  assert.match(result.avisoMensaje,/correo.*revisión/);
+  assert.equal(s.c.g10Lista_('Notificaciones').find(n=>n.titulo==='Credenciales de acceso').correoEstado,'No enviado');
+  assert.equal(s.c.g10Usuario_(u.email).credencial.algoritmo,'pbkdf2-sha256');
+});
 
 test('Gen10: publicaciones avisan solo a inscritos activos; borradores no avisan y lectura es privada',()=>{
   const s=fixture(),before=s.c.g10Lista_('Notificaciones').length;

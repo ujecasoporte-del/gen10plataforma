@@ -57,6 +57,31 @@ function state(rol='estudiante'){
 }
 function service(snapshot=state()){return d=>d.accion==='gen10Estado'?snapshot:['gen10Login','gen10VerificarCodigo'].includes(d.accion)?{ok:true,portal:'gen10-v1',autenticacion:'password-v1',token:'campus-session'}:{ok:true,portal:'gen10-v1',mensaje:'Revisa tu correo'};}
 
+test('Solo administrador ve configuración y confirma contraseñas antes de enviarlas',async()=>{
+  const snapshot=state('admin');snapshot.usuarios=[{id:'alumno',email:'alumno@example.com',nombre:'Alumno',rol:'estudiante',activo:true,revision:3}];
+  const c=client(service(snapshot));await c.login();c.nav.find(n=>n.dataset.view==='administracion').listeners.click();
+  assert.match(c.node('view').innerHTML,/Configuración de roles y contraseñas/);
+  await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'password-usuario',id:'alumno'}})}});
+  c.node('editorForm').values={password:'Contraseña nueva 2026',confirmPassword:'otra clave',enviarCorreo:'on'};
+  await c.submit('editorForm');assert.equal(c.requests.some(r=>r.accion==='gen10ConfigurarPassword'),false);
+  c.node('editorForm').values.confirmPassword='Contraseña nueva 2026';await c.submit('editorForm');
+  assert.equal(c.requests.find(r=>r.accion==='gen10ConfigurarPassword').revision,3);
+  const teacher=client(service(state('docente')));await teacher.login();
+  await teacher.node('view').listeners.click({target:{closest:()=>({dataset:{action:'password-usuario',id:'alumno'}})}});
+  assert.equal(!!teacher.node('editor').open,false);
+  assert.equal(teacher.requests.some(r=>r.accion==='gen10ConfigurarPassword'),false);
+});
+
+test('Crear estudiante desde curso es una opción exclusiva de administración',async()=>{
+  for(const role of ['admin','docente']){
+    const c=client(service(state(role)));await c.login();
+    await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'curso',id:'course-1'}})}});
+    await c.node('view').listeners.click({target:{closest:()=>({dataset:{action:'inscribir',id:''}})}});
+    if(role==='admin')assert.match(c.node('editorFields').innerHTML,/Crear estudiante nuevo y enviar sus credenciales/);
+    else assert.doesNotMatch(c.node('editorFields').innerHTML,/crearEstudiante/);
+  }
+});
+
 test('Bienvenida: aparece en cada inicio de sesión y no al actualizar el campus',async()=>{
   const c=client(service());await c.login();
   assert.equal(c.node('welcomeDialog').open,true);

@@ -9,12 +9,13 @@
   <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="gen10.css">
   <link rel="stylesheet" href="gen10-institucional.css?v=perfil-cabecera-8">
+  <link rel="stylesheet" href="gen10-acceso.css?v=campus-universitario-3">
   <script src="inscripcion-config.js" defer></script>
   <script src="gen10-archivos.js" defer></script>
   <script src="vendor/jspdf.umd.min.js" defer></script>
   <script src="gen10-pdf.js" defer></script>
   <script src="gen10-perfil.js" defer></script>
-  <script src="gen10.js" defer></script>
+  <script src="gen10.js?v=mantenimiento-sincronizacion-10" defer></script>
   <script src="gen10-slider.js" defer></script>
 <script src="gen10-menu.js" defer></script>
 </head>
@@ -29,11 +30,11 @@
   <main id="contenido">
     <section id="access" class="access-layout" aria-labelledby="accessTitle">
       <div class="access-story">
-        <img class="institute-logo" data-ifobe-imagen="logo" width="500" height="500" alt="Escudo del Instituto IFOBE">
-        <p class="eyebrow">PLATAFORMA ACADÉMICA INSTITUCIONAL</p>
-        <h1 id="accessTitle">Campus virtual<br><em>Gen10.</em></h1>
-        <p>Gestiona tu formación desde un solo lugar: contenidos académicos, entregas y seguimiento de resultados.</p>
-        <ul class="access-capabilities"><li><i class="bi bi-collection" aria-hidden="true"></i> Cursos y recursos académicos</li><li><i class="bi bi-journal-check" aria-hidden="true"></i> Actividades y entregas</li><li><i class="bi bi-bar-chart" aria-hidden="true"></i> Calificaciones y avance</li></ul>
+        <div class="access-institute"><img class="institute-logo" data-ifobe-imagen="logo" width="500" height="500" alt="Escudo del Instituto IFOBE"><div><strong>INSTITUTO IFOBE</strong><span>PLATAFORMA ACADÉMICA INSTITUCIONAL</span></div></div>
+        <p class="eyebrow">BIENVENIDO A TU</p>
+        <h1 id="accessTitle">Campus Virtual<br><em>Gen10</em></h1>
+        <p>Tu espacio de aprendizaje, donde la educación y la tecnología se unen para potenciar tu futuro profesional.</p>
+        <ul class="access-capabilities"><li><i class="bi bi-mortarboard" aria-hidden="true"></i><div><strong>Cursos y recursos académicos</strong><small>Accede a tus asignaturas, materiales y actividades.</small></div></li><li><i class="bi bi-calendar-check" aria-hidden="true"></i><div><strong>Actividades y entregas</strong><small>Gestiona tus tareas y evaluaciones.</small></div></li><li><i class="bi bi-bar-chart" aria-hidden="true"></i><div><strong>Calificaciones y avance</strong><small>Consulta tu progreso académico.</small></div></li></ul>
         <div class="story-footer"><span>INSTITUTO IFOBE</span><span>Docentes · Estudiantes · Administración</span></div>
       </div>
       <div class="access-form">
@@ -43,7 +44,7 @@
         <form id="loginForm">
           <label for="loginEmail">Correo electrónico registrado</label><input id="loginEmail" name="username" type="email" autocomplete="username" placeholder="nombre@correo.com" maxlength="150" required>
           <label for="loginPassword">Contraseña</label><div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required><button type="button" class="password-toggle" data-password="loginPassword" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button></div>
-          <button type="submit">Entrar al campus <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+          <button type="submit"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Iniciar sesión</button>
           <button id="recoverPassword" class="quiet" type="button">Olvidé mi contraseña</button>
           <details id="activationOptions" class="activation-options"><summary>¿Es tu primer ingreso?</summary><p>Activa tu cuenta una sola vez para crear tu contraseña. Tu correo debe estar habilitado por IFOBE.</p><button id="activateAccount" class="quiet" type="button">Activar mi cuenta</button></details>
         </form>
